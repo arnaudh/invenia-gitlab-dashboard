@@ -76,14 +76,24 @@ python3 -m http.server --directory web
 Q: how many API calls are needed to get all the information we want?
 
 ```
-R repos, D failed days, J failed jobs per pipeline
+R repos, P total failed pipelines per day, J total failed jobs per day, D days
 
 5     GET /projects (5 due to pagination)
-R     GET /projects/:id/pipelines (+ pagination for days)
-R*D   GET /projects/:id/pipelines/:pipeline_id/jobs
-R*D*J GET /projects/:id/jobs/:job_id/trace
-```
+R     GET /projects/:id/pipelines (+ pagination if more than 100 days)
+P*D   GET /projects/:id/pipelines/:pipeline_id/jobs
+J*D   GET /projects/:id/jobs/:job_id/trace
+=> total 5+R+(P+J)*D
 
+Rough estimation:
+  R=100 repos
+  P=5 failed pipelines per day
+  J=10 failed jobs per day
+=> total 105 + 15 * D
+  => 120 for 1 day
+  => 555 for 30 days
+
+In practice I had ~2,000 API calls for 30 days for all nightly-dev pipelines (in December)
+```
 
 
 [nightly]: https://gitlab.invenia.ca/invenia/wiki/-/blob/master/dev/nightly.md

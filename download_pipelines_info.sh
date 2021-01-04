@@ -23,8 +23,7 @@ download_projects() {
     # jq -s '.|flatten|length' responses/projects/*.json
 }
 
-download_projects()
-
+download_projects
 
 project_ids=$(jq -s '. | flatten | map(.id) | join(" ")' responses/projects/*.json -r)
 # project_ids=(241 460 353 201 473 508) # (BidFiles.jl GLMForecasters.jl GPForecasters.jl S3DB.jl Backruns.jl Features.jl)
@@ -54,7 +53,7 @@ for project_id in ${project_ids[@]}; do
     jq -s '.|flatten' responses/projects/$project_id/pipelines/*.json -r >> $combined_json_file
 
     # pipeline status is one of: created, waiting_for_resource, preparing, pending, running, success, failed, canceled, skipped, manual, scheduled 
-    failed_pipeline_ids=$(jq -s '[. | flatten | .[] | select(.status="failed") | .id] | join(" ")' responses/projects/$project_id/pipelines/*.json -r)
+    failed_pipeline_ids=$(jq -s '[. | flatten | .[] | select(.status=="failed") | .id] | join(" ")' responses/projects/$project_id/pipelines/*.json -r)
     echo ',"failed_pipelines":{' >> $combined_json_file
 
     first_iteration_inner_loop=true
