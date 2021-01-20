@@ -22,6 +22,50 @@
         a:visited {
             color: black;
         }
+        .avatar {
+            border-radius: 50%;
+            height: 20px;
+        }
+
+        .switch-field {
+            display: flex;
+            margin-bottom: 36px;
+            overflow: hidden;
+        }
+        .switch-field input {
+            position: absolute !important;
+            clip: rect(0, 0, 0, 0);
+            height: 1px;
+            width: 1px;
+            border: 0;
+            overflow: hidden;
+        }
+        .switch-field label {
+            background-color: #fff;
+            color: rgba(0, 0, 0, 0.6);
+            font-size: 14px;
+            line-height: 1;
+            text-align: center;
+            padding: 8px 16px;
+            margin-right: -1px;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            transition: all 0.1s ease-in-out;
+            box-shadow: none;
+        }
+        .switch-field label:hover {
+            cursor: pointer;
+        }
+        .switch-field input:checked + label {
+            background-color: #eee;
+            box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.3), 0 1px rgba(255, 255, 255, 0.1);
+        }
+        .switch-field label:first-of-type {
+            border-radius: 4px 0 0 4px;
+        }
+        .switch-field label:last-of-type {
+            border-radius: 0 4px 4px 0;
+        }
+
 /*
         div.container {
           overflow: scroll;
@@ -68,6 +112,28 @@
 
 <h2>Nightly pipelines</h2>
 
+<div id="toolbar">
+    <div class="switch-field">
+        <input type="radio" id="nightly-all" name="nightly" value="all" onchange="update_state_from_user_inputs()">
+        <label for="nightly-all">All</label>
+
+        <input type="radio" id="nightly-dev" name="nightly" value="dev" onchange="update_state_from_user_inputs()">
+        <label for="nightly-dev"><img src="images/nightly-dev.jpg" class="avatar"/> DEV</label>
+
+        <input type="radio" id="nightly-rse" name="nightly" value="rse" onchange="update_state_from_user_inputs()">
+        <label for="nightly-rse"><img src="images/nightly-rse.png" class="avatar"/> RSE</label>
+    </div>
+    <div class="switch-field">
+        <input type="radio" id="days-30" name="days" value="30" onchange="update_state_from_user_inputs()">
+        <label for="days-30">1 month</label>
+
+        <input type="radio" id="days-14" name="days" value="14" onchange="update_state_from_user_inputs()">
+        <label for="days-14">2 weeks</label>
+
+        <input type="radio" id="days-7" name="days" value="7" onchange="update_state_from_user_inputs()">
+        <label for="days-7">1 week</label>
+    </div>
+</div>
 <div class="container">
   <table id="pipeline-table"></table>
 </div>
