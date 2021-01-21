@@ -2,6 +2,7 @@ body {
     white-space: nowrap;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", Ubuntu, Cantarell, "Helvetica Neue", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     color: #303030;
+    padding: 5px;
 }
 
 a {
@@ -70,9 +71,16 @@ table {
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
 }
 table thead tr {
-    background-color: #292961;
-    color: #ffffff;
     text-align: left;
+}
+table thead th {
+    background-color: #292961;
+    font-weight: lighter;
+    color: #ddd;
+}
+table thead th .today {
+    font-weight: bold;
+    color: #fff;
 }
 table tbody tr {
     border-bottom: 1px solid #dddddd;

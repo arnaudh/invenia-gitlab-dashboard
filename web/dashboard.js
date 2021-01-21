@@ -27,6 +27,17 @@ function remove_null_values(obj) {
     return obj;
 }
 
+function treatAsUTC(date) {
+    var result = new Date(date);
+    result.setMinutes(result.getMinutes() - result.getTimezoneOffset());
+    return result;
+}
+
+function daysBetween(startDate, endDate) {
+    var millisecondsPerDay = 24 * 60 * 60 * 1000;
+    return Math.ceil((treatAsUTC(endDate) - treatAsUTC(startDate)) / millisecondsPerDay);
+}
+
 function add_days(date, days) {
     let result = new Date(date);
     result.setDate(result.getDate() + days);
@@ -105,9 +116,10 @@ function to_html_node(text_or_node) {
     }
 }
 
-function addTH(row, text_or_node) {
+function addTH(row, text_or_node, colspan=1) {
     let th = document.createElement("th");
     th.innerHTML = text_or_node;
+    th.colSpan = colspan;
     row.appendChild(th);
 }
 
@@ -116,18 +128,20 @@ function addCell(row, text_or_node) {
     cell.innerHTML = text_or_node;
 }
 
-function render_pipeline(pipeline) {
+function render_pipeline(pipeline, project) {
     let cellValue;
     if (pipeline.status === "success") {
         cellValue = `<a href="${pipeline.web_url}"><span title="success">✓</span></a>`;
-    } else {
+    } else if (pipeline.status === "failed") {
         let jobs = project.failed_pipelines[pipeline.id].jobs;
         let failed_jobs = jobs.filter(j => j.status === "failed");
         if (failed_jobs.length > 0) {
             cellValue = failed_jobs.map(render_job).join("<br>");
         } else {
-            cellValue = pipeline.status;
+            cellValue = `<a href="${pipeline.web_url}"><span title="${pipeline.status}">${pipeline.status}</span></a>`;
         }
+    } else {
+        cellValue = `<a href="${pipeline.web_url}"><span title="${pipeline.status}">${pipeline.status}</span></a>`;
     }
     return cellValue;
 }
@@ -146,6 +160,36 @@ function emojize(text) {
         // .replaceAll(/((64-bit|x86_64)\s*)+/gi, '<span title="64-bit (x86_64)">64</span>')
 }
 
+function render_dates_header(table, timeline_start) {
+    let dates_header = table.createTHead();
+    let date_row_months = dates_header.insertRow();
+    addTH(date_row_months, "");
+    addTH(date_row_months, "");
+    let first_date = true;
+    let dates_to_show_months = [];
+    for (let date of dates_since(timeline_start)){
+        if (first_date || date.getDate() === 1) {
+            dates_to_show_months.push(date);
+        }
+        first_date = false;
+    }
+    for (let [i, date] of dates_to_show_months.entries()){
+        let month = date.toLocaleString('default', { month: 'long' });
+        let next_date = dates_to_show_months[i+1] || add_days(Date.now(), 1);
+        let colspan = daysBetween(date, next_date);
+        addTH(date_row_months, `${month}`, colspan)
+    }
+    let date_row_days = dates_header.insertRow();
+    addTH(date_row_days, "");
+    addTH(date_row_days, "");
+    let dates = dates_since(timeline_start);
+    let today = dates.pop();
+    for (let date of dates){
+        addTH(date_row_days, `${date.getDate()}`);
+    }
+    addTH(date_row_days, `<span class="today">${today.getDate()}</span>`);
+}
+
 function render_project_pipelines() {
     let state = window.history.state;
     console.log('state', state);
@@ -159,18 +203,11 @@ function render_project_pipelines() {
     let table = document.getElementById('pipeline-table');
     table.innerHTML = '';
 
-    // Dates header
-    let dates_header = table.createTHead();
-    let row = dates_header.insertRow();
-    addTH(row, "");
-    addTH(row, "");
-    for (date of dates_since(timeline_start)){
-        addTH(row, `${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`)
-    }
+    render_dates_header(table, timeline_start);
 
     let table_body = document.createElement('tbody');
     table.appendChild(table_body);
-    for (project of projects_sorted) {
+    for (let project of projects_sorted) {
         // if (project.metadata.id !== 207) continue;
         if (!has_pipelines_after_date(project, timeline_start)) {
             continue;
@@ -192,10 +229,10 @@ function render_project_pipelines() {
                 cellValue = '<em title="no pipeline">-</em>';
             } else if (pipelines.length > 1) {
                 cellValue = '<em>multiple<br>pipelines</em>';
-                cellValue = pipelines.map(render_pipeline).join('<br>');
+                cellValue = pipelines.map(pipeline => render_pipeline(pipeline, project)).join('<br>');
             } else {
                 let pipeline = pipelines[0];
-                cellValue = render_pipeline(pipeline);
+                cellValue = render_pipeline(pipeline, project);
             }
             addCell(row, cellValue);
         }
