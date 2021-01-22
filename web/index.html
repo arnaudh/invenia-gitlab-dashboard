@@ -30,9 +30,25 @@
         <input type="radio" id="days-7" name="days" value="7" onchange="update_state_from_user_inputs()">
         <label for="days-7">1 week</label>
     </div>
+    <div>
+        <input type="checkbox" id="display-jobs" name="display-jobs" value="jobs" onchange="update_state_from_user_inputs()">
+        <label for="display-jobs">Display jobs</label>
+    </div>
+    <div>
+        <label for="job-filter">Job filter: </label>
+        <input type="text" id="job-filter" name="job-filter" size="50" onchange="update_state_from_user_inputs()">
+    </div>
+    <div>
+        <input type="checkbox" id="display-errors" name="display-errors" value="errors" onchange="update_state_from_user_inputs()">
+        <label for="display-errors">Display errors</label>
+    </div>
+    <div>
+        <label for="error-filter">Error filter: </label>
+        <input type="text" id="error-filter" name="error-filter" size="50" onchange="update_state_from_user_inputs()">
+    </div>
 </div>
 <div class="container">
-  <table id="pipeline-table"></table>
+  <table id="results-table"></table>
 </div>
 
 <script type="text/javascript" src="dashboard.js"></script>

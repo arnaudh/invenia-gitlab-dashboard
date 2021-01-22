@@ -1,6 +1,13 @@
 
-const DEFAULT_DAYS = 14;
-const DEFAULT_NIGHTLY_USER = null;
+const DEFAULTS = {
+    "nightly": "all", // nightly user
+    "days": 7,
+    "errors": "", // errors filter
+    "jobs": "", // jobs filter
+    "display_jobs": true,
+    "display_errors": true,
+}
+
 const USERS_INFO = {
     "nightly-rse": {
         "name": "White Horse",
@@ -11,20 +18,24 @@ const USERS_INFO = {
         "avatar": "images/nightly-dev.jpg"
     },
 }
+const ERROR_STRING_DISPLAY_LIMIT = 30;
 
 let projects;
+let patterns_in_logs;
 
 //=================================
 //      Utility functions
 //=================================
 
-function remove_null_values(obj) {
-    for (let propName in obj) {
-        if (obj[propName] === null) {
-            delete obj[propName];
+function remove_defaults_and_null_values(obj) {
+    const clone = {...obj}; // note: shallow clone (ok in this case)
+    for (let propName in clone) {
+        if (clone[propName] === DEFAULTS[propName] || clone[propName] === null) {
+        // if (clone[propName] === null) {
+            delete clone[propName];
         }
     }
-    return obj;
+    return clone;
 }
 
 function treatAsUTC(date) {
@@ -129,14 +140,21 @@ function addCell(row, text_or_node) {
 }
 
 function render_pipeline(pipeline, project) {
+    let state = window.history.state;
     let cellValue;
     if (pipeline.status === "success") {
         cellValue = `<a href="${pipeline.web_url}"><span title="success">✓</span></a>`;
     } else if (pipeline.status === "failed") {
-        let jobs = project.failed_pipelines[pipeline.id].jobs;
-        let failed_jobs = jobs.filter(j => j.status === "failed");
-        if (failed_jobs.length > 0) {
-            cellValue = failed_jobs.map(render_job).join("<br>");
+        if (state.display_jobs || state.display_errors) {
+            let jobs = project.failed_pipelines[pipeline.id].jobs;
+            let failed_jobs = jobs.filter(j => j.status === "failed");
+            if (failed_jobs.length > 0) {
+                cellValue = `<table class="pipeline-jobs">`;
+                cellValue += failed_jobs.map(job => render_job(job, project)).join("");
+                cellValue += `</table>`;
+            } else {
+                cellValue = `<a href="${pipeline.web_url}"><span title="${pipeline.status}">${pipeline.status}</span></a>`;
+            }
         } else {
             cellValue = `<a href="${pipeline.web_url}"><span title="${pipeline.status}">${pipeline.status}</span></a>`;
         }
@@ -146,8 +164,96 @@ function render_pipeline(pipeline, project) {
     return cellValue;
 }
 
-function render_job(job) {
-    return `<a href="${job.web_url}">${emojize(job.name)}</a>`;
+function limit_string(s, length) {
+    return s.length > length ? s.substring(0, length - 3) + "<span>...</span>" : s;
+}
+
+function string_matches_filter(error_string, filter_string) {
+    // if (filter_string === "*") {
+    //     return true
+    // } else if (filter_string.includes("*")) {
+    //     // TODO Support glob (e.g. with https://github.com/isaacs/minimatch)
+    //     console.log('Glob matching not supported yet');
+    //     return false;
+    // } else {
+        return error_string.toLowerCase().includes(filter_string.toLowerCase());
+    // }
+}
+
+function remove_duplicates(arr, key_fields) {
+    return arr.filter(
+        (s => o => 
+            (k => !s.has(k) && s.add(k))
+            (key_fields.map(k => o[k]).join('|'))
+        )
+        (new Set)
+    );
+}
+
+function render_job(job, project) {
+    let state = window.history.state;
+    let error_filter = state.errors;
+    let job_filter = state.jobs;
+    let all_patterns = patterns_in_logs[project.metadata.id] && patterns_in_logs[project.metadata.id][job.id] || [];
+    
+    let patterns_deduplicated = remove_duplicates(all_patterns, ["matched_group"]); // remove addition patterns that have the same matched_group
+    
+
+    let show_job;
+    let patterns_to_show;
+
+
+    if (!string_matches_filter(job.name, job_filter)) {
+        show_job = false;
+    } else {
+        if (error_filter === "*" || error_filter === "") {
+            show_job = true;
+            patterns_to_show = patterns_deduplicated;
+        } else {
+            // TODO search on matched_text?
+            patterns_to_show = patterns_deduplicated.filter(p => string_matches_filter(p.matched_group, error_filter));
+            // Note it's ok to hide job if it didn't have any patterns to begin with
+            // since we're explicitely looking for a known pattern
+            show_job = (patterns_to_show.length > 0);
+        }
+    }
+
+    let html;
+    if (show_job) {
+        // html = `<table>`;
+        html = `<tr>`;
+        if (state.display_jobs) {
+            html += `<td>`;
+            // html += `<a href="${job.web_url}">${emojize(job.name)}</a>`;
+            html += `<span onclick="job_click()">`;
+            html += `<span class="tooltip">`;
+            html += emojize(job.name);
+            html += `<div><div class="tooltiptext">${job.name}</div></div>`;
+            html += `</span>`;
+            html += `</span>`;
+            html += `</td>`;
+        }
+        if (state.display_errors) {
+            html += `<td>`;
+            html += `<ul>`;
+            for (let pattern of patterns_to_show) {
+                // html += ` <span>(${patterns.length})</span> `;
+                html += `<li onclick="error_click()">`;
+                html += `<span class="tooltip">`;
+                html += limit_string(pattern.matched_group, length=ERROR_STRING_DISPLAY_LIMIT);
+                html += `<div><div class="tooltiptext">${pattern.matched_group}</div></div>`;
+                html += `</span>`;
+                html += `</li>`;
+            }
+        }
+        html += `</ul>`;
+        html += `</td>`;
+        html += `</tr>`;
+        // html += `</table>`;
+    } else {
+        html = '';
+    }
+    return html;
 }
 
 function emojize(text) {
@@ -156,6 +262,7 @@ function emojize(text) {
         .replaceAll(/linux/gi, '<span title="Linux">🐧</span>')
         .replaceAll(/mac/gi, '<span title="Mac">🍏</span>') // 
         .replaceAll(/nightly/gi, '<span title="Nightly">🌙</span>') // ☪☾✩☽🌙🌚🌕
+        .replaceAll(/High-Memory/gi, '<span title="Linux">💾</span>') // 💾
         // .replaceAll(/((32-bit|i686)\s*)+/gi, '<span title="32-bit (i686)">32</span>')
         // .replaceAll(/((64-bit|x86_64)\s*)+/gi, '<span title="64-bit (x86_64)">64</span>')
 }
@@ -192,7 +299,6 @@ function render_dates_header(table, timeline_start) {
 
 function render_project_pipelines() {
     let state = window.history.state;
-    console.log('state', state);
     
     let oldest_pipeline_date = get_oldest_pipeline_date(projects);
     let min_timeline_start = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - state.days);
@@ -200,7 +306,7 @@ function render_project_pipelines() {
     
     let projects_sorted = sort_projects_by_pipeline_status(projects, timeline_start);
 
-    let table = document.getElementById('pipeline-table');
+    let table = document.getElementById('results-table');
     table.innerHTML = '';
 
     render_dates_header(table, timeline_start);
@@ -212,7 +318,7 @@ function render_project_pipelines() {
         if (!has_pipelines_after_date(project, timeline_start)) {
             continue;
         }
-        if (state.nightly && project.nightly_user !== `nightly-${state.nightly}`) {
+        if (state.nightly !== "all"  && project.nightly_user !== `nightly-${state.nightly}`) {
             continue;
         }
 
@@ -244,57 +350,89 @@ function render_project_pipelines() {
 //=================================
 
 function state_to_search_string(state) {
-    let search_string = new URLSearchParams(remove_null_values(state)).toString();
-    return search_string === "" ? "" : `?${search_string}`;
+    // TODO remove fields which have the default value
+    let search_string = new URLSearchParams(remove_defaults_and_null_values(state)).toString();
+    return search_string === "" ? "?" : `?${search_string}`;
 }
 
 function update_state_from_url() {
     let search_params = new URLSearchParams(window.location.search);
     let state = {
-        "nightly": search_params.get('nightly') || DEFAULT_NIGHTLY_USER,
-        "days": search_params.get('days') || DEFAULT_DAYS,
+        "nightly": search_params.get('nightly') || DEFAULTS['nightly'],
+        "days": search_params.get('days') || DEFAULTS['days'],
+        "errors": search_params.get('errors') || DEFAULTS['errors'],
+        "jobs": search_params.get('jobs') || DEFAULTS['jobs'],
+        "display_errors": search_params.get('display_errors') == 'true' || DEFAULTS['display_errors'],
+        "display_jobs": search_params.get('display_jobs') == 'true' || DEFAULTS['display_jobs'],
     };
-    history.replaceState(state, "", state_to_search_string(state));
+    console.log('state', state);
+    let res = window.history.replaceState(state, "", state_to_search_string(state));
     update_user_inputs_from_state();
     update_results_from_state();
 }
 
 function update_state_from_user_inputs() {
-    let nightly = document.querySelector('input[name="nightly"]:checked').value;
     let state = {
-        nightly: nightly == "all" ? null : nightly,
+        nightly: document.querySelector('input[name="nightly"]:checked').value,
         days: parseInt(document.querySelector('input[name="days"]:checked').value),
+        errors: document.querySelector('#error-filter').value,
+        jobs: document.querySelector('#job-filter').value,
+        display_errors: document.querySelector('#display-errors').checked,
+        display_jobs: document.querySelector('#display-jobs').checked,
     }
-    history.pushState(state, "", state_to_search_string(state));
+    console.log('state', state);
+    window.history.pushState(state, "", state_to_search_string(state));
     update_results_from_state();
 }
 
 window.onpopstate = function(event) {
+    console.log('state', window.history.state);
     update_user_inputs_from_state();
     update_results_from_state();
 }
 
 function update_user_inputs_from_state() {
     let state = window.history.state;
-    let nightly = state.nightly || "all";
-    let days = state.days;
-    document.getElementById(`nightly-${nightly}`).checked = true;
-    document.getElementById(`days-${days}`).checked = true;
+    document.getElementById(`nightly-${state.nightly}`).checked = true;
+    document.getElementById(`days-${state.days}`).checked = true;
+    document.getElementById(`error-filter`).value = state.errors;
+    document.getElementById(`job-filter`).value = state.jobs;
+    document.getElementById(`display-errors`).checked = state.display_errors;
+    document.getElementById(`display-jobs`).checked = state.display_jobs;
 }
 
 function update_results_from_state() {
     render_project_pipelines();
 }
 
+function job_click() {
+    // console.log('error_click', event, event.srcElement.innerText);
+    document.getElementById(`job-filter`).value = event.srcElement.firstChild.textContent;
+    update_state_from_user_inputs();
+}
+
+function error_click() {
+    // console.log('error_click', event, event.srcElement.innerText);
+    document.getElementById(`error-filter`).value = event.srcElement.firstChild.textContent;
+    update_state_from_user_inputs();
+}
+
 //=================================
 //            Main
 //=================================
 
-// fetch('combined_december.json')
-fetch('combined.json')
-    .then(response => response.json())
-    .then(function (response_json){
-        projects = response_json;
-        console.log('projects', projects);
-        update_state_from_url();
-    });
+Promise.all([
+    fetch('combined.json'),
+    fetch('patterns_in_logs.json')
+]).then(function (responses) {
+    // Get a JSON object from each of the responses
+    return Promise.all(responses.map(function (response) {
+        return response.json();
+    }));
+}).then(function (data) {
+    projects = data[0];
+    patterns_in_logs = data[1];
+    update_state_from_url();
+}).catch(function (error) {
+    console.log('ERROR', error);
+});

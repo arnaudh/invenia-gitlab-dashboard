@@ -62,7 +62,7 @@ a:visited {
 }
 
 
-table {
+#results-table {
     border-collapse: collapse;
     margin: 25px 0;
     font-size: 0.9em;
@@ -70,25 +70,74 @@ table {
     min-width: 400px;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
 }
-table thead tr {
+#results-table thead tr {
     text-align: left;
 }
-table thead th {
+#results-table thead th {
     background-color: #292961;
     font-weight: lighter;
     color: #ddd;
 }
-table thead th .today {
+#results-table thead th .today {
     font-weight: bold;
     color: #fff;
 }
-table tbody tr {
+#results-table tbody tr {
     border-bottom: 1px solid #dddddd;
 }
-table tbody tr:last-of-type {
+#results-table tbody tr:last-of-type {
     border-bottom: 2px solid #292961;
 }
-table tbody tr.active-row {
+#results-table tbody tr.active-row {
     font-weight: bold;
     color: #292961;
+}
+
+.pipeline-jobs ul {
+    margin: 0px;
+    list-style-type: none;
+    padding: 0;
+    font-style: italic;
+}
+.pipeline-jobs td {
+    vertical-align: text-top;
+}
+
+
+.tooltip {
+  position: relative;
+  /*display: inline-block;*/
+  /*border-bottom: 1px dotted black;*/
+}
+
+.tooltip .tooltiptext {
+  visibility: hidden;
+
+  /*width: 300px;*/
+
+  background-color: black;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px;
+  margin-top: 10px;
+
+  position: absolute;
+  z-index: 1;
+}
+
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+}
+
+.tooltip .tooltiptext::after {
+  content: " ";
+  position: absolute;
+  bottom: 100%;  /* At the top of the tooltip */
+  left: 50px;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: transparent transparent black transparent;
 }
