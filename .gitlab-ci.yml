@@ -2,12 +2,19 @@ include:
   - project: invenia/gitlab-ci-helper
     file: /templates/ci-init.yml
 
+stages:
+  - setup
+  - deploy
+
 
 .setup: &setup
   |
   echo "$ci_init" > ci_init && source ci_init && rm ci_init
 
 pages:
+  stage: deploy
+  # only:
+  #   - master
   script:
   - aws sts get-caller-identity
   - ./download_pipelines_info.sh
