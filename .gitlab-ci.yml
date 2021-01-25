@@ -1,6 +1,7 @@
 pages:
   script:
-  - echo "Hello"
+  - ./download_pipelines_info.sh
+  - ./find_patterns_in_logs.py
   artifacts:
     paths:
     - public
