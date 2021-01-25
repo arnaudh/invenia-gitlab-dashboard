@@ -13,6 +13,8 @@ stages:
 
 pages:
   stage: deploy
+  before_script:
+    - *setup
   # only:
   #   - master
   script:
