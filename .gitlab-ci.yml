@@ -10,6 +10,7 @@ stages:
 .setup: &setup
   |
   echo "$ci_init" > ci_init && source ci_init && rm ci_init
+  install_awscli
 
 pages:
   stage: deploy
