@@ -19,7 +19,6 @@ pages:
   # only:
   #   - master
   script:
-  - aws sts get-caller-identity
   - ./download_pipelines_info.sh
   - ./find_patterns_in_logs.py
   artifacts:

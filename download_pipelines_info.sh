@@ -6,8 +6,11 @@ set -eu -o pipefail
 # To run:
 #  1. Generate Gitlab Personal Access Token https://gitlab.invenia.ca/profile/personal_access_tokens (checking read_user, read_api, read_repository)
 #  2. Run:
-#   export GITLAB_ACCESS_TOKEN=XXXXXX
+#   export AWS_PROFILE=ci
 #   ./download_pipelines_info.sh
+
+echo "Getting Gitlab API access token from AWS SSM"
+GITLAB_ACCESS_TOKEN=$(aws ssm get-parameter --name gitlab-dashboard-access-token --with-decryption --query Parameter.Value --output text)
 
 mkdir -p responses/projects/
 
@@ -31,7 +34,7 @@ curl_wrapper() {
 
 
 download_projects() {
-    curl_wrapper --head -H "Private-Token: $GITLAB_ACCESS_TOKEN" "https://gitlab.invenia.ca/api/v4/projects?per_page=100" > responses/projects/head
+    curl_wrapper --dump-header responses/projects/head -H "Private-Token: $GITLAB_ACCESS_TOKEN" "https://gitlab.invenia.ca/api/v4/projects?per_page=100"
 
     # n_projects=$(cat responses/projects/head | grep X-Total: | sed 's/[^0-9]*//g')
     n_pages=$(cat responses/projects/head | grep X-Total-Pages: | sed 's/[^0-9]*//g')
@@ -53,7 +56,7 @@ nightly_users=(nightly-dev nightly-rse)
 
 MAX_N_PIPELINES=30
 
-combined_json_file=web/combined.json
+combined_json_file=public/combined.json
 echo '[' > $combined_json_file
 
 # progress bar function
