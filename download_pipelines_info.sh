@@ -49,7 +49,9 @@ download_projects() {
 
 download_projects
 
-project_ids=($(jq -s '. | flatten | map(.id) | join(" ")' responses/projects/*.json -r))
+echo "Downloading projects"
+
+project_ids=($(jq -s '. | flatten | map(.id|tostring) | join(" ")' responses/projects/*.json -r))
 # project_ids=(241 460 353 201 473 508 533 536) # (BidFiles.jl GLMForecasters.jl GPForecasters.jl S3DB.jl Backruns.jl Features.jl GLMModels.jl<rse> WrapperModels.jl<rse>)
 # project_ids=(473 508 533 536) # (Backruns.jl Features.jl GLMModels.jl<rse> WrapperModels.jl<rse>)
 
@@ -97,7 +99,7 @@ for i in "${!project_ids[@]}"; do
     jq -s '.|flatten' responses/projects/$project_id/pipelines/by_user/*/*.json -r >> $combined_json_file
 
     # pipeline status is one of: created, waiting_for_resource, preparing, pending, running, success, failed, canceled, skipped, manual, scheduled 
-    failed_pipeline_ids=$(jq -s '[. | flatten | .[] | select(.status=="failed") | .id] | join(" ")' responses/projects/$project_id/pipelines/by_user/*/*.json -r)
+    failed_pipeline_ids=$(jq -s '[. | flatten | .[] | select(.status=="failed") | .id | tostring] | join(" ")' responses/projects/$project_id/pipelines/by_user/*/*.json -r)
     echo ',"failed_pipelines":{' >> $combined_json_file
 
     first_iteration_inner_loop=true
@@ -112,7 +114,7 @@ for i in "${!project_ids[@]}"; do
         echo '"jobs":' >> $combined_json_file
         cat responses/projects/$project_id/pipelines/by_id/$pipeline_id/jobs.json >> $combined_json_file
 
-        failed_job_ids=$(jq -s '[. | flatten | .[] | select(.status=="failed") | .id] | join(" ")' responses/projects/$project_id/pipelines/by_id/$pipeline_id/jobs.json -r)
+        failed_job_ids=$(jq -s '[. | flatten | .[] | select(.status=="failed") | .id | tostring] | join(" ")' responses/projects/$project_id/pipelines/by_id/$pipeline_id/jobs.json -r)
         for job_id in ${failed_job_ids[@]}; do
             mkdir -p responses/projects/$project_id/jobs/$job_id
             curl_wrapper -H "Private-Token: $GITLAB_ACCESS_TOKEN" "https://gitlab.invenia.ca/api/v4/projects/$project_id/jobs/$job_id/trace" > responses/projects/$project_id/jobs/$job_id/trace
