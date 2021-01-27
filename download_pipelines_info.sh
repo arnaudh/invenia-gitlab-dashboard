@@ -34,13 +34,14 @@ curl_wrapper() {
 
 
 download_projects() {
+    echo "Downloading project list"
     curl_wrapper --dump-header responses/projects/head -H "Private-Token: $GITLAB_ACCESS_TOKEN" "https://gitlab.invenia.ca/api/v4/projects?per_page=100" > /dev/null
 
     # n_projects=$(cat responses/projects/head | grep X-Total: | sed 's/[^0-9]*//g')
     n_pages=$(cat responses/projects/head | grep X-Total-Pages: | sed 's/[^0-9]*//g')
 
     for (( page = 1; page <= $n_pages; page++ )); do
-        echo $page
+        echo "page $page"
         curl_wrapper -H "Private-Token: $GITLAB_ACCESS_TOKEN" "https://gitlab.invenia.ca/api/v4/projects?per_page=100&page=$page" > responses/projects/page_$page.json
     done
     # jq -s '.|flatten|length' responses/projects/*.json
