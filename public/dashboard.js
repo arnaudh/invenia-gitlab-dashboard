@@ -2,8 +2,7 @@
 const DEFAULTS = {
     "nightly": "all", // nightly user
     "days": 7,
-    "errors": "", // errors filter
-    "jobs": "", // jobs filter
+    "search": "", // search filter
     "display_jobs": true,
     "display_errors": true,
 }
@@ -192,8 +191,7 @@ function remove_duplicates(arr, key_fields) {
 
 function render_job(job, project) {
     let state = window.history.state;
-    let error_filter = state.errors;
-    let job_filter = state.jobs;
+    let search_filter = state.search;
     let all_patterns = patterns_in_logs[project.metadata.id] && patterns_in_logs[project.metadata.id][job.id] || [];
     
     let patterns_deduplicated = remove_duplicates(all_patterns, ["matched_group"]); // remove addition patterns that have the same matched_group
@@ -202,19 +200,17 @@ function render_job(job, project) {
     let show_job;
     let patterns_to_show;
 
-
-    if (!string_matches_filter(job.name, job_filter)) {
-        show_job = false;
+    if (search_filter === "") {
+        show_job = true;
+        patterns_to_show = patterns_deduplicated;
     } else {
-        if (error_filter === "*" || error_filter === "") {
+        let errors_matching_filter = patterns_deduplicated.filter(p => string_matches_filter(p.matched_group, search_filter));
+        if (errors_matching_filter.length > 0) {
             show_job = true;
-            patterns_to_show = patterns_deduplicated;
+            patterns_to_show = errors_matching_filter;
         } else {
-            // TODO search on matched_text?
-            patterns_to_show = patterns_deduplicated.filter(p => string_matches_filter(p.matched_group, error_filter));
-            // Note it's ok to hide job if it didn't have any patterns to begin with
-            // since we're explicitely looking for a known pattern
-            show_job = (patterns_to_show.length > 0);
+            show_job = string_matches_filter(job.name, search_filter);
+            patterns_to_show = patterns_deduplicated;
         }
     }
 
@@ -360,8 +356,7 @@ function update_state_from_url() {
     let state = {
         "nightly": search_params.get('nightly') || DEFAULTS['nightly'],
         "days": search_params.get('days') || DEFAULTS['days'],
-        "errors": search_params.get('errors') || DEFAULTS['errors'],
-        "jobs": search_params.get('jobs') || DEFAULTS['jobs'],
+        "search": search_params.get('search') || DEFAULTS['search'],
         "display_errors": search_params.get('display_errors') == 'true' || DEFAULTS['display_errors'],
         "display_jobs": search_params.get('display_jobs') == 'true' || DEFAULTS['display_jobs'],
     };
@@ -375,8 +370,7 @@ function update_state_from_user_inputs() {
     let state = {
         nightly: document.querySelector('input[name="nightly"]:checked').value,
         days: parseInt(document.querySelector('input[name="days"]:checked').value),
-        errors: document.querySelector('#error-filter').value,
-        jobs: document.querySelector('#job-filter').value,
+        search: document.querySelector('#search').value,
         display_errors: document.querySelector('#display-errors').checked,
         display_jobs: document.querySelector('#display-jobs').checked,
     }
@@ -395,8 +389,7 @@ function update_user_inputs_from_state() {
     let state = window.history.state;
     document.getElementById(`nightly-${state.nightly}`).checked = true;
     document.getElementById(`days-${state.days}`).checked = true;
-    document.getElementById(`error-filter`).value = state.errors;
-    document.getElementById(`job-filter`).value = state.jobs;
+    document.getElementById(`search`).value = state.search;
     document.getElementById(`display-errors`).checked = state.display_errors;
     document.getElementById(`display-jobs`).checked = state.display_jobs;
 }
@@ -407,13 +400,13 @@ function update_results_from_state() {
 
 function job_click() {
     // console.log('error_click', event, event.srcElement.innerText);
-    document.getElementById(`job-filter`).value = event.srcElement.firstChild.textContent;
+    document.getElementById(`search`).value = event.srcElement.firstChild.textContent;
     update_state_from_user_inputs();
 }
 
 function error_click() {
     // console.log('error_click', event, event.srcElement.innerText);
-    document.getElementById(`error-filter`).value = event.srcElement.firstChild.textContent;
+    document.getElementById(`search`).value = event.srcElement.firstChild.textContent;
     update_state_from_user_inputs();
 }
 
