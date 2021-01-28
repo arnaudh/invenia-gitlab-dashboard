@@ -5,16 +5,20 @@ body {
     padding: 5px;
 }
 
-a {
+#link-to-repo {
+  float: right;
+}
+
+table a {
     text-decoration: none;
 }
-a:hover {
+table a:hover {
    text-decoration:underline;
 }
-a {
+table a {
     color: #303030;
 }
-a:visited {
+table a:visited {
     color: black;
 }
 .avatar {

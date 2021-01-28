@@ -220,7 +220,7 @@ function render_job(job, project) {
         html = `<tr>`;
         if (state.display_jobs) {
             html += `<td>`;
-            html += `<span onclick="job_click()">`;
+            html += `<span>`;
             html += `<span class="tooltip">`;
             html += `<a href="${job.web_url}">${emojize(job.name)}</a>`;
             // html += `<a href="${job.web_url}">${job.name}</a>`;
@@ -234,7 +234,7 @@ function render_job(job, project) {
             html += `<ul>`;
             for (let pattern of patterns_to_show) {
                 // html += ` <span>(${patterns.length})</span> `;
-                html += `<li onclick="error_click()">`;
+                html += `<li>`;
                 html += `<span class="tooltip error-message">`;
                 html += limit_string(pattern.matched_group, length=ERROR_STRING_DISPLAY_LIMIT);
                 html += `<span><span class="tooltiptext center error-message">${pattern.matched_group}</span></span>`;
@@ -349,7 +349,7 @@ function render_project_pipelines() {
 function state_to_search_string(state) {
     // TODO remove fields which have the default value
     let search_string = new URLSearchParams(remove_defaults_and_null_values(state)).toString();
-    return search_string === "" ? "?" : `?${search_string}`;
+    return search_string === "" ? window.location.pathname : `?${search_string}`;
 }
 
 function update_state_from_url() {

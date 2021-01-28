@@ -80,7 +80,7 @@ for path in Path('responses').rglob('trace'):
 
         for pattern in patterns:
             for match in re.finditer(pattern, text):
-                print("match", match.group(1))
+                # print("match", match.group(1))
                 # print(match)
                 # print(match.group(0))
 

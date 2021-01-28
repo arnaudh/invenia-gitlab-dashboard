@@ -3,9 +3,7 @@ include:
     file: /templates/ci-init.yml
 
 stages:
-  - setup
   - deploy
-
 
 .setup: &setup
   |
