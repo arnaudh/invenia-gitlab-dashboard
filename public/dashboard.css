@@ -102,12 +102,12 @@ table a:visited {
 #results-table thead tr {
     text-align: left;
 }
-#results-table thead th {
+#results-table thead .date-header {
     background-color: #292961;
     font-weight: lighter;
     color: #ddd;
 }
-#results-table thead th .today {
+#results-table thead .date-header .today {
     font-weight: bold;
     color: #fff;
 }
@@ -127,6 +127,9 @@ table a:visited {
     list-style-type: none;
     padding: 0;
     /*font-style: italic;*/
+}
+.pipeline-jobs li {
+  padding: 4px
 }
 .pipeline-jobs td {
     vertical-align: text-top;
@@ -151,8 +154,8 @@ table a:visited {
   border: 1px solid black;
   /*color: #fff;*/
   text-align: center;
-  border-radius: 6px;
-  padding: 5px;
+  border-radius: 4px;
+  padding: 3px;
   margin-top: 10px;
 
   position: absolute;
@@ -169,8 +172,8 @@ table a:visited {
 .error-message {
   background-color: #999;
   color: #fff;
-  border-radius: 6px;
-  padding: 5px;
+  border-radius: 4px;
+  padding: 3px;
   margin-top: 10px;
   font-family: "Menlo", "DejaVu Sans Mono", "Liberation Mono", "Consolas", "Ubuntu Mono", "Courier New", "andale mono", "lucida console", monospace;
 }

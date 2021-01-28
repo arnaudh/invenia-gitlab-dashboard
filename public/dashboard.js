@@ -45,7 +45,7 @@ function treatAsUTC(date) {
 
 function daysBetween(startDate, endDate) {
     var millisecondsPerDay = 24 * 60 * 60 * 1000;
-    return Math.ceil((treatAsUTC(endDate) - treatAsUTC(startDate)) / millisecondsPerDay);
+    return Math.floor((treatAsUTC(endDate) - treatAsUTC(startDate)) / millisecondsPerDay);
 }
 
 function add_days(date, days) {
@@ -126,10 +126,13 @@ function to_html_node(text_or_node) {
     }
 }
 
-function addTH(row, text_or_node, colspan=1) {
+function addTH(row, text_or_node, colspan=1, is_date_header=true) {
     let th = document.createElement("th");
     th.innerHTML = text_or_node;
     th.colSpan = colspan;
+    if (is_date_header) {
+        th.classList.add("date-header");
+    }
     row.appendChild(th);
 }
 
@@ -267,8 +270,7 @@ function emojize(text) {
 function render_dates_header(table, timeline_start) {
     let dates_header = table.createTHead();
     let date_row_months = dates_header.insertRow();
-    addTH(date_row_months, "");
-    addTH(date_row_months, "");
+    addTH(date_row_months, "", colspan=2, is_date_header=false);
     let first_date = true;
     let dates_to_show_months = [];
     for (let date of dates_since(timeline_start)){
@@ -284,8 +286,7 @@ function render_dates_header(table, timeline_start) {
         addTH(date_row_months, `${month}`, colspan)
     }
     let date_row_days = dates_header.insertRow();
-    addTH(date_row_days, "");
-    addTH(date_row_days, "");
+    addTH(date_row_days, "", colspan=2, is_date_header=false);
     let dates = dates_since(timeline_start);
     let today = dates.pop();
     for (let date of dates){
@@ -339,6 +340,11 @@ function render_project_pipelines() {
             }
             addCell(row, cellValue);
         }
+
+
+        addCell(row, `<img src="${USERS_INFO[project.nightly_user].avatar}" class="avatar"/>`);
+        addCell(row, `<a href="${project.metadata.web_url}/-/pipelines">${project.metadata.name}</a>`);
+
     }
 }
 
