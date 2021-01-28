@@ -22,9 +22,12 @@ a:visited {
     height: 20px;
 }
 
+.form-line {
+  margin-bottom: 15px
+}
+
 .switch-field {
     display: flex;
-    margin-bottom: 36px;
     overflow: hidden;
 }
 .switch-field input {
@@ -61,6 +64,28 @@ a:visited {
     border-radius: 0 4px 4px 0;
 }
 
+.search-container {
+  position: relative;
+  width: 500px;
+  height: 25px;
+}
+.search-container input {
+  font-size: 1em;
+  padding-left: 5px;
+  width: 100%;
+  height: 100%;
+}
+.search-icon {
+  width: 20px;
+  height: 20px;
+  vertical-align: -3px;
+  position: absolute;
+  right:-5px;
+  top: 4px;
+  transition: color 0.15s;
+  user-select: none;
+  fill: rgba(209,209,240,0.8);
+}
 
 #results-table {
     border-collapse: collapse;
@@ -97,7 +122,7 @@ a:visited {
     margin: 0px;
     list-style-type: none;
     padding: 0;
-    font-style: italic;
+    /*font-style: italic;*/
 }
 .pipeline-jobs td {
     vertical-align: text-top;
@@ -115,8 +140,12 @@ a:visited {
 
   /*width: 300px;*/
 
-  background-color: black;
-  color: #fff;
+  /* position tooltip */
+  
+
+  background-color: white;
+  border: 1px solid black;
+  /*color: #fff;*/
   text-align: center;
   border-radius: 6px;
   padding: 5px;
@@ -127,17 +156,51 @@ a:visited {
 }
 
 
+.tooltip .tooltiptext.error-message {
+  border: none;
+  background-color:  black;
+  color: #fff;
+}
+
+.error-message {
+  background-color: #999;
+  color: #fff;
+  border-radius: 6px;
+  padding: 5px;
+  margin-top: 10px;
+  font-family: "Menlo", "DejaVu Sans Mono", "Liberation Mono", "Consolas", "Ubuntu Mono", "Courier New", "andale mono", "lucida console", monospace;
+}
+
+.tooltiptext.center {
+  /* When div */
+  /*top: -100%;*/
+
+  /* When span */
+  top: -10px;
+  left: 0;
+}
+
+.tooltiptext.left {
+  /*When div
+  top: -100%;
+  right: 100%;*/
+
+  top: -15px;
+  right: 105%;
+}
+
+
 .tooltip:hover .tooltiptext {
   visibility: visible;
 }
 
-.tooltip .tooltiptext::after {
+.tooltip .tooltiptext.left::after {
   content: " ";
   position: absolute;
-  bottom: 100%;  /* At the top of the tooltip */
-  left: 50px;
-  margin-left: -5px;
+  top: 50%;
+  left: 100%; /* To the right of the tooltip */
+  margin-top: -5px;
   border-width: 5px;
   border-style: solid;
-  border-color: transparent transparent black transparent;
+  border-color: transparent transparent transparent black;
 }

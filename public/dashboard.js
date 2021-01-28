@@ -164,7 +164,7 @@ function render_pipeline(pipeline, project) {
 }
 
 function limit_string(s, length) {
-    return s.length > length ? s.substring(0, length - 3) + "<span>...</span>" : s;
+    return s.length > length ? s.substring(0, length - 3) + "<span>…</span>" : s;
 }
 
 function string_matches_filter(error_string, filter_string) {
@@ -220,11 +220,11 @@ function render_job(job, project) {
         html = `<tr>`;
         if (state.display_jobs) {
             html += `<td>`;
-            // html += `<a href="${job.web_url}">${emojize(job.name)}</a>`;
             html += `<span onclick="job_click()">`;
             html += `<span class="tooltip">`;
-            html += emojize(job.name);
-            html += `<div><div class="tooltiptext">${job.name}</div></div>`;
+            html += `<a href="${job.web_url}">${emojize(job.name)}</a>`;
+            // html += `<a href="${job.web_url}">${job.name}</a>`;
+            html += `<span><span class="tooltiptext left">${job.name}</span></span>`;
             html += `</span>`;
             html += `</span>`;
             html += `</td>`;
@@ -235,9 +235,9 @@ function render_job(job, project) {
             for (let pattern of patterns_to_show) {
                 // html += ` <span>(${patterns.length})</span> `;
                 html += `<li onclick="error_click()">`;
-                html += `<span class="tooltip">`;
+                html += `<span class="tooltip error-message">`;
                 html += limit_string(pattern.matched_group, length=ERROR_STRING_DISPLAY_LIMIT);
-                html += `<div><div class="tooltiptext">${pattern.matched_group}</div></div>`;
+                html += `<span><span class="tooltiptext center error-message">${pattern.matched_group}</span></span>`;
                 html += `</span>`;
                 html += `</li>`;
             }
@@ -258,7 +258,8 @@ function emojize(text) {
         .replaceAll(/linux/gi, '<span title="Linux">🐧</span>')
         .replaceAll(/mac/gi, '<span title="Mac">🍏</span>') // 
         .replaceAll(/nightly/gi, '<span title="Nightly">🌙</span>') // ☪☾✩☽🌙🌚🌕
-        .replaceAll(/High-Memory/gi, '<span title="Linux">💾</span>') // 💾
+        .replaceAll(/High-Memory/gi, '<span title="High-Memory">💾</span>') // 💾
+        .replaceAll(/Documentation/gi, '<span title="Documentation">📜</span>') // 📜📄📝
         // .replaceAll(/((32-bit|i686)\s*)+/gi, '<span title="32-bit (i686)">32</span>')
         // .replaceAll(/((64-bit|x86_64)\s*)+/gi, '<span title="64-bit (x86_64)">64</span>')
 }
@@ -396,18 +397,6 @@ function update_user_inputs_from_state() {
 
 function update_results_from_state() {
     render_project_pipelines();
-}
-
-function job_click() {
-    // console.log('error_click', event, event.srcElement.innerText);
-    document.getElementById(`search`).value = event.srcElement.firstChild.textContent;
-    update_state_from_user_inputs();
-}
-
-function error_click() {
-    // console.log('error_click', event, event.srcElement.innerText);
-    document.getElementById(`search`).value = event.srcElement.firstChild.textContent;
-    update_state_from_user_inputs();
 }
 
 //=================================
