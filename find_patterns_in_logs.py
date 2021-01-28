@@ -80,7 +80,7 @@ for path in Path('responses').rglob('trace'):
 
         for pattern in patterns:
             for match in re.finditer(pattern, text):
-                print("match", match.group(1))
+                # print("match", match.group(1))
                 # print(match)
                 # print(match.group(0))
 
@@ -104,7 +104,7 @@ for path in Path('responses').rglob('trace'):
 #     'All Forecasters failed. See previous warnings': [job_ids]
 # }
 
-output_file = 'web/patterns_in_logs.json'
+output_file = 'public/patterns_in_logs.json'
 with open(output_file, 'w') as f:
     json.dump(results, f)
     print(f"Wrote to {output_file}")

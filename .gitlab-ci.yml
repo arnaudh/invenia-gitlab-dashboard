@@ -1,0 +1,25 @@
+include:
+  - project: invenia/gitlab-ci-helper
+    file: /templates/ci-init.yml
+
+stages:
+  - deploy
+
+.setup: &setup
+  |
+  echo "$ci_init" > ci_init && source ci_init && rm ci_init
+  install_awscli
+  package_install jq
+
+pages:
+  stage: deploy
+  before_script:
+    - *setup
+  # only:
+  #   - master
+  script:
+  - ./download_pipelines_info.sh
+  - ./find_patterns_in_logs.py
+  artifacts:
+    paths:
+    - public

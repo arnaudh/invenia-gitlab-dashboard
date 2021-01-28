@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>GitLab dashboard</title>
+    <title>GitLab Dashboard</title>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="dashboard.css">
 </head>
 <body>
 
-<h2>Nightly pipelines</h2>
+<a id="link-to-repo" href="https://gitlab.invenia.ca/invenia/gitlab-dashboard">Code lives here</a>
+<h2>GitLab Dashboard</h2>
+<h3>Nightly pipelines</h3>
 
 <div id="toolbar">
-    <div class="switch-field">
+    <div class="switch-field form-line">
         <input type="radio" id="nightly-all" name="nightly" value="all" onchange="update_state_from_user_inputs()">
         <label for="nightly-all">All</label>
 
@@ -20,7 +22,7 @@
         <input type="radio" id="nightly-rse" name="nightly" value="rse" onchange="update_state_from_user_inputs()">
         <label for="nightly-rse"><img src="images/nightly-rse.png" class="avatar"/> RSE</label>
     </div>
-    <div class="switch-field">
+    <div class="switch-field form-line">
         <input type="radio" id="days-30" name="days" value="30" onchange="update_state_from_user_inputs()">
         <label for="days-30">1 month</label>
 
@@ -30,21 +32,19 @@
         <input type="radio" id="days-7" name="days" value="7" onchange="update_state_from_user_inputs()">
         <label for="days-7">1 week</label>
     </div>
-    <div>
+    <div class="form-line">
         <input type="checkbox" id="display-jobs" name="display-jobs" value="jobs" onchange="update_state_from_user_inputs()">
-        <label for="display-jobs">Display jobs</label>
+        <label for="display-jobs">Display job names</label>
     </div>
-    <div>
-        <label for="job-filter">Job filter: </label>
-        <input type="text" id="job-filter" name="job-filter" size="50" onchange="update_state_from_user_inputs()">
-    </div>
-    <div>
+    <div class="form-line">
         <input type="checkbox" id="display-errors" name="display-errors" value="errors" onchange="update_state_from_user_inputs()">
-        <label for="display-errors">Display errors</label>
+        <label for="display-errors">Display error messages</label>
     </div>
-    <div>
-        <label for="error-filter">Error filter: </label>
-        <input type="text" id="error-filter" name="error-filter" size="50" onchange="update_state_from_user_inputs()">
+    <div class="search-container form-line">
+        <input type="text" id="search" name="search" onchange="update_state_from_user_inputs()" placeholder="Filter by job name or error message">
+        <svg class="search-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" id="search"><path fill-rule="evenodd" d="M9.331 9.331a3.088 3.088 0 1 0-4.368-4.368 3.088 3.088 0 0 0 4.368 4.368zm.655 2.11a5.149 5.149 0 0 1-6.478-7.933 5.147 5.147 0 0 1 7.934 6.478l2.256 2.257a1.03 1.03 0 1 1-1.455 1.455l-2.257-2.256z"></path></svg>
+        </svg>
     </div>
 </div>
 <div class="container">
