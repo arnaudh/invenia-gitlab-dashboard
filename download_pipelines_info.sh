@@ -9,10 +9,15 @@ set -eu -o pipefail
 #   export AWS_PROFILE=ci
 #   ./download_pipelines_info.sh
 
-echo "Getting Gitlab API access token from AWS SSM"
-GITLAB_ACCESS_TOKEN=$(aws ssm get-parameter --name gitlab-dashboard-access-token --with-decryption --query Parameter.Value --output text)
+MAX_N_PROJECTS=100000
+MAX_N_PIPELINES=30
+echo "MAX_N_PROJECTS=$MAX_N_PROJECTS"
+echo "MAX_N_PIPELINES=$MAX_N_PIPELINES"
 
 mkdir -p responses/projects/
+
+echo "Getting Gitlab API access token from AWS SSM"
+GITLAB_ACCESS_TOKEN=$(aws ssm get-parameter --name gitlab-dashboard-access-token --with-decryption --query Parameter.Value --output text)
 
 curl_wrapper() {
     output=$(curl --silent "$@")
@@ -33,12 +38,13 @@ curl_wrapper() {
 }
 
 
-download_projects() {
+download_project_list() {
     echo "Downloading project list"
     curl_wrapper --dump-header responses/projects/head -H "Private-Token: $GITLAB_ACCESS_TOKEN" "https://gitlab.invenia.ca/api/v4/projects?per_page=100" > /dev/null
 
     # n_projects=$(cat responses/projects/head | grep X-Total: | sed 's/[^0-9]*//g')
     n_pages=$(cat responses/projects/head | grep X-Total-Pages: | sed 's/[^0-9]*//g')
+    echo "Total pages for project list: $n_pages"
 
     for (( page = 1; page <= $n_pages; page++ )); do
         echo "page $page"
@@ -47,7 +53,7 @@ download_projects() {
     # jq -s '.|flatten|length' responses/projects/*.json
 }
 
-download_projects
+download_project_list
 
 echo "Downloading projects"
 
@@ -55,21 +61,13 @@ project_ids=($(jq -s '. | flatten | map(.id|tostring) | join(" ")' responses/pro
 # project_ids=(241 460 353 201 473 508 533 536) # (BidFiles.jl GLMForecasters.jl GPForecasters.jl S3DB.jl Backruns.jl Features.jl GLMModels.jl<rse> WrapperModels.jl<rse>)
 # project_ids=(473 508 533 536) # (Backruns.jl Features.jl GLMModels.jl<rse> WrapperModels.jl<rse>)
 
+project_ids=("${project_ids[@]:0:$MAX_N_PROJECTS}")
+
 nightly_users=(nightly-dev nightly-rse)
 
-MAX_N_PIPELINES=30
 
 combined_json_file=public/combined.json
 echo '[' > $combined_json_file
-
-# progress bar function
-prog() {
-    local w=80 p=$1 total=$2;  shift
-    # create a string of spaces, then change them to dots
-    printf -v dots "%*s" "$(( $p*$w/$total ))" ""; dots=${dots// /.};
-    # print those dots on a fixed-width space plus the percentage etc. 
-    printf "\r\e[K|%-*s| %3d / %s" "$w" "$dots" "$p" "$*"; 
-}
 
 first_iteration=true
 # for project_id in ${project_ids[@]}; do
