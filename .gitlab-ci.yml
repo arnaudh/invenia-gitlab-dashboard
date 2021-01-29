@@ -15,8 +15,8 @@ pages:
   stage: deploy
   before_script:
     - *setup
-  # only:
-  #   - master
+  retry:
+    max: 2
   script:
   - ./download_pipelines_info.sh
   - ./find_patterns_in_logs.py
