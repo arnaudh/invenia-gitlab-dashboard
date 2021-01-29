@@ -67,6 +67,7 @@ nightly_users=(nightly-dev nightly-rse)
 
 
 combined_json_file=public/combined.json
+combined_small_json_file=public/combined_small.json
 echo '[' > $combined_json_file
 
 first_iteration=true
@@ -128,3 +129,7 @@ echo ']' >> $combined_json_file # end of file
 
 echo "Wrote to $combined_json_file"
 
+# Selecting only fields which we'll use in the dashboard
+cat $combined_json_file | jq '[.[] | {metadata:{id:.metadata.id, name:.metadata.name, web_url:.metadata.web_url}, nightly_user: .nightly_user, pipelines: (.pipelines|map({id:.id, status:.status, web_url:.web_url, created_at:.created_at})), failed_pipelines:(.failed_pipelines|to_entries|map({key:.key, value:{jobs:.value.jobs|map({id:.id, name:.name, status:.status, web_url:.web_url})}})|from_entries)}]' -c > $combined_small_json_file
+
+echo "Wrote to $combined_small_json_file"

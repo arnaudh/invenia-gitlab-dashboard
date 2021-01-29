@@ -434,9 +434,12 @@ let table = document.getElementById('results-table');
 table.classList.add("loading");
 
 Promise.all([
-    fetch('combined.json'),
+    fetch('combined_small.json'),
     fetch('patterns_in_logs.json')
 ]).then(function (responses) {
+    if (responses.some(r => r.status !== 200)) {
+        throw 'fetching json failed (see dev console).';
+    }
     // Get a JSON object from each of the responses
     return Promise.all(responses.map(function (response) {
         return response.json();
@@ -452,4 +455,5 @@ Promise.all([
 }).catch(function (error) {
     table.classList.remove("loading");
     show_error(`ERROR: ${error}`);
+    throw error;
 });

@@ -50,21 +50,15 @@ julia_exception_patterns = [
 #     }
 # ]
 
-
-
 projects = {}
 for f in glob.glob("responses/projects/*.json"):
     with open(f, "rb") as infile:
         for project in json.load(infile):
             projects[project["id"]] = project
 
-# print(projects)
-# sys.exit(1)
-
 results = {}
 
 for path in Path('responses').rglob('trace'):
-    print(path)
 
     match = re.match(r'responses/projects/(\d+)/jobs/(\d+)/trace', str(path))
     if match is None:
@@ -73,24 +67,18 @@ for path in Path('responses').rglob('trace'):
     project_id = int(match.group(1))
     job_id = int(match.group(2))
 
-    print(f"project name: {projects[project_id]['path_with_namespace']}, project_id: {project_id}, job_id: {job_id}")
+    print(f"Project name: {projects[project_id]['path_with_namespace']}, project_id: {project_id}, job_id: {job_id}")
 
     with open(path, 'r') as f:
         text = f.read()
-        # print("text")
-        # print(text)
 
         for pattern in patterns:
             for match in re.finditer(pattern, text):
-                # print("match", match.group(1))
-                # print(match)
-                # print(match.group(0))
-
                 match_result = {
-                    "pattern": pattern,
-                    "matched_text": match.group(0),
+                    # "pattern": pattern,
+                    # "matched_text": match.group(0),
                     "matched_group": match.group(1),
-                    "_log_url": f"https://gitlab.invenia.ca/{projects[project_id]['path_with_namespace']}/-/jobs/{job_id}"
+                    # "_log_url": f"https://gitlab.invenia.ca/{projects[project_id]['path_with_namespace']}/-/jobs/{job_id}"
                 }
 
                 if project_id not in results:
@@ -98,13 +86,9 @@ for path in Path('responses').rglob('trace'):
                 if job_id not in results[project_id]:
                     results[project_id][job_id] = []
                 results[project_id][job_id].append(match_result)
-    
-    # sys.exit(1)
 
-
-# error_index = {
-#     'All Forecasters failed. See previous warnings': [job_ids]
-# }
+        num_errors_found = len(results[project_id][job_id]) if project_id in results and job_id in results[project_id] else 0
+        print(f"Found {num_errors_found} error(s) in {path}")
 
 output_file = 'public/patterns_in_logs.json'
 with open(output_file, 'w') as f:
