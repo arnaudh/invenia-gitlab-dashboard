@@ -6,6 +6,8 @@ from pathlib import Path
 import re
 import sys
 
+# Error patterns
+# The first matched group (in brackets) is what is shown to the user
 patterns = [
     r'(Unsatisfiable requirements detected for package [^\s]+)',
     # r'Some tests did not pass: \d+ passed, \d+ failed, \d+ errored, \d+ broken\.',
