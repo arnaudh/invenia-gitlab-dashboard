@@ -48,6 +48,10 @@ function daysBetween(startDate, endDate) {
     return Math.floor((treatAsUTC(endDate) - treatAsUTC(startDate)) / millisecondsPerDay);
 }
 
+function isSameDay(startDate, endDate) {
+    return daysBetween(startDate, endDate) === 0;
+}
+
 function add_days(date, days) {
     let result = new Date(date);
     result.setDate(result.getDate() + days);
@@ -95,6 +99,16 @@ function get_oldest_pipeline_date(projects) {
     return min_date;
 }
 
+function get_newest_pipeline_date(projects) {
+    let dates = projects.flatMap(function(p) {
+        return p.pipelines.slice(0, 1).flatMap(function(pip) {
+            return pip.created_at ? [new Date(pip.created_at)] : [];
+        })
+    });
+    let min_date = new Date(Math.max.apply(null, dates));
+    return min_date;
+}
+
 // Sort projects by having unsuccessful pipelines at the top (priority for more recent days)
 function sort_projects_by_pipeline_status(projects, timeline_start) {
     return projects.sort(function (a, b) {
@@ -112,6 +126,12 @@ function sort_projects_by_pipeline_status(projects, timeline_start) {
         }
         return 0;
     });
+}
+
+function show_error(str) {
+    let error_div = document.getElementById('error-message');
+    error_div.innerHTML = str;
+    error_div.style.display = 'block';
 }
 
 //=================================
@@ -409,18 +429,31 @@ function update_results_from_state() {
 //            Main
 //=================================
 
+let table = document.getElementById('results-table');
+
+table.classList.add("loading");
+
 Promise.all([
-    fetch('combined.json'),
+    fetch('combined_small.json'),
     fetch('patterns_in_logs.json')
 ]).then(function (responses) {
+    if (responses.some(r => r.status !== 200)) {
+        throw 'fetching json failed (see dev console).';
+    }
     // Get a JSON object from each of the responses
     return Promise.all(responses.map(function (response) {
         return response.json();
     }));
 }).then(function (data) {
+    table.classList.remove("loading");
     projects = data[0];
     patterns_in_logs = data[1];
+    if (!isSameDay(get_newest_pipeline_date(projects), Date.now())) {
+        show_error(`WARNING: pipelines for the most recent day(s) are missing. This is likely due to a dashboard build failure (see <a href="https://gitlab.invenia.ca/invenia/gitlab-dashboard/-/pipelines">here</a>).`);
+    }
     update_state_from_url();
 }).catch(function (error) {
-    console.log('ERROR', error);
+    table.classList.remove("loading");
+    show_error(`ERROR: ${error}`);
+    throw error;
 });

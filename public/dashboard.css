@@ -9,6 +9,22 @@ body {
   float: right;
 }
 
+#error-message {
+  background-color: #fdd;
+  color: #933;
+  padding: 10px;
+  display: none;
+}
+
+.loading {
+  background-image: url('images/in-venia-vasion.gif');
+  height: 128px;
+  width: 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  margin: 0 auto;
+}
+
 table a {
     text-decoration: none;
 }
@@ -96,7 +112,7 @@ table a:visited {
     margin: 25px 0;
     font-size: 0.9em;
     font-family: sans-serif;
-    min-width: 400px;
+    /*min-width: 400px;*/
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
 }
 #results-table thead tr {
