@@ -70,6 +70,8 @@ python3 -m http.server --directory public
 
 5. Go to [http://localhost:8000/](http://localhost:8000/)
 
+Once running, you can make changes to any of the static files (js, html, css, json), and simply reload the page to see the changes.
+
 ## Notes 
 
 #### Useful GitLab API calls

@@ -10,25 +10,20 @@ import sys
 # The first matched group (in brackets) is what is shown to the user
 patterns = [
     r'(Unsatisfiable requirements detected for package [^\s]+)',
-    # r'Some tests did not pass: \d+ passed, \d+ failed, \d+ errored, \d+ broken\.',
     r'Got exception outside of a @test (.+?)\s+Stacktrace:',
     r'Test Failed at.*?Expression: (.*?)\s+Stacktrace:',
     r'ERROR: (empty intersection between .* and project compatibility.*) Stacktrace:',
     r'ERROR:.*?(UndefVarError: .*? not defined)',
     r'ERROR:.*?Job failed: (execution took longer than .*?) seconds',
     r'(received signal: KILL)',
-    # r'(errored during testing Stacktrace)',
     r'ERROR: (failed to clone from .+?), error: GitError\(Code:ERROR, Class:OS, failed to connect to .*?: Operation timed out\) Stacktrace:',
     r'ERROR: Requested .+? from .+? has (different version in metadata: \'.*?\')',
     r'FATAL: (password authentication failed for user ".+?")',
     r'(Backrun Failed)',
     r'(signal \(15\))',
-    r'deploy_stack:CREATE_FAILED.+?Error Code: (.+?);'
+    r'deploy_stack:CREATE_FAILED.+?Error Code: (.+?);',
+    r'An error occurred \(.+?\) when calling the .+? operation: ([ -~]+)', # Boto error # Note: `[ -~]` matches any ASCII character (this is to match until the next color code)
     # r'ERROR:(.+)'
-]
-
-julia_exception_patterns = [
-    r'MethodError: (no method matching .*?)Closest candidates are:'
 ]
 
 
