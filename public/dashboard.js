@@ -255,14 +255,23 @@ function render_job(job, project) {
         if (state.display_errors) {
             html += `<td>`;
             html += `<ul>`;
-            for (let pattern of patterns_to_show) {
-                // html += ` <span>(${patterns.length})</span> `;
+            if (all_patterns.length === 0) {
                 html += `<li>`;
-                html += `<span class="tooltip error-message">`;
-                html += limit_string(pattern.matched_group, length=ERROR_STRING_DISPLAY_LIMIT);
-                html += `<span><span class="tooltiptext center error-message">${pattern.matched_group}</span></span>`;
+                html += `<span class="tooltip dashboard-error-message">`;
+                html += `?`
+                html += `<span><span class="tooltiptext center dashboard-error-message">? (No known error pattern was found. You can add patterns <a href="https://gitlab.invenia.ca/invenia/gitlab-dashboard/-/blob/master/find_patterns_in_logs.py">here</a>)</span></span>`;
                 html += `</span>`;
                 html += `</li>`;
+            } else {
+                for (let pattern of patterns_to_show) {
+                    // html += ` <span>(${patterns.length})</span> `;
+                    html += `<li>`;
+                    html += `<span class="tooltip error-message">`;
+                    html += limit_string(pattern.matched_group, length=ERROR_STRING_DISPLAY_LIMIT);
+                    html += `<span><span class="tooltiptext center error-message">${pattern.matched_group}</span></span>`;
+                    html += `</span>`;
+                    html += `</li>`;
+                }
             }
         }
         html += `</ul>`;

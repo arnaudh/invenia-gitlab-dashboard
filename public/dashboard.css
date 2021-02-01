@@ -37,6 +37,7 @@ table a {
 table a:visited {
     color: black;
 }
+
 .avatar {
     border-radius: 50%;
     height: 20px;
@@ -192,6 +193,23 @@ table a:visited {
   padding: 3px;
   margin-top: 10px;
   font-family: "Menlo", "DejaVu Sans Mono", "Liberation Mono", "Consolas", "Ubuntu Mono", "Courier New", "andale mono", "lucida console", monospace;
+}
+
+.tooltip .tooltiptext.dashboard-error-message {
+  border: none;
+  background-color:  #999;
+  color: #fff;
+}
+.dashboard-error-message {
+  background-color: #999;
+  color: #fff;
+  border-radius: 4px;
+  padding: 3px 6px 3px 3px;
+  margin-top: 10px;
+  font-style: italic;
+}
+table .dashboard-error-message a {
+  color: yellow;
 }
 
 .tooltiptext.center {
