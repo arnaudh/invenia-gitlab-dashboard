@@ -387,14 +387,24 @@ function state_to_search_string(state) {
     return search_string === "" ? window.location.pathname : `?${search_string}`;
 }
 
+function parse_boolean(str, default_value) {
+    if (str === 'true') {
+        return true;
+    } else if (str === 'false') {
+        return false
+    } else {
+        return default_value;
+    }
+}
+
 function update_state_from_url() {
     let search_params = new URLSearchParams(window.location.search);
     let state = {
         "nightly": search_params.get('nightly') || DEFAULTS['nightly'],
         "days": search_params.get('days') || DEFAULTS['days'],
         "search": search_params.get('search') || DEFAULTS['search'],
-        "display_errors": search_params.get('display_errors') == 'true' || DEFAULTS['display_errors'],
-        "display_jobs": search_params.get('display_jobs') == 'true' || DEFAULTS['display_jobs'],
+        "display_errors": parse_boolean(search_params.get('display_errors'), DEFAULTS['display_errors']),
+        "display_jobs": parse_boolean(search_params.get('display_jobs'), DEFAULTS['display_jobs']),
     };
     console.log('state', state);
     let res = window.history.replaceState(state, "", state_to_search_string(state));
