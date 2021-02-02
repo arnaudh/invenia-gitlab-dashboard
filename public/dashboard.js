@@ -156,9 +156,12 @@ function addTH(row, text_or_node, colspan=1, is_date_header=true) {
     row.appendChild(th);
 }
 
-function addCell(row, text_or_node) {
+function addCell(row, text_or_node, is_repo_header=false) {
     let cell = row.insertCell();
     cell.innerHTML = text_or_node;
+    if (is_repo_header) {
+        cell.classList.add("sticky-right");
+    }
 }
 
 function render_pipeline(pipeline, project) {
@@ -298,30 +301,21 @@ function emojize(text) {
 
 function render_dates_header(table, timeline_start) {
     let dates_header = table.createTHead();
-    let date_row_months = dates_header.insertRow();
-    addTH(date_row_months, "", colspan=2, is_date_header=false);
-    let first_date = true;
-    let dates_to_show_months = [];
-    for (let date of dates_since(timeline_start)){
-        if (first_date || date.getDate() === 1) {
-            dates_to_show_months.push(date);
-        }
-        first_date = false;
-    }
-    for (let [i, date] of dates_to_show_months.entries()){
-        let month = date.toLocaleString('default', { month: 'long' });
-        let next_date = dates_to_show_months[i+1] || add_days(Date.now(), 1);
-        let colspan = daysBetween(date, next_date);
-        addTH(date_row_months, `${month}`, colspan)
-    }
-    let date_row_days = dates_header.insertRow();
-    addTH(date_row_days, "", colspan=2, is_date_header=false);
+    // Days row
+    let days_row = dates_header.insertRow();
     let dates = dates_since(timeline_start);
     let today = dates.pop();
+    let first_date = true;
     for (let date of dates){
-        addTH(date_row_days, `${date.getDate()}`);
+        let month_prefix = '';
+        if (first_date || date.getDate() === 1){ 
+            month_prefix = date.toLocaleString('default', { month: 'short' });
+        }
+        first_date = false;
+        addTH(days_row, `${month_prefix} ${date.getDate()}`);
     }
-    addTH(date_row_days, `<span class="today">${today.getDate()}</span>`);
+    addTH(days_row, `<span class="today">${today.getDate()}</span>`);
+    addTH(days_row, "", colspan=1, is_date_header=true);
 }
 
 function render_project_pipelines() {
@@ -351,8 +345,8 @@ function render_project_pipelines() {
 
         let row = table_body.insertRow();
 
-        addCell(row, `<img src="${USERS_INFO[project.nightly_user].avatar}" class="avatar"/>`);
-        addCell(row, `<a href="${project.metadata.web_url}/-/pipelines">${project.metadata.name}</a>`);
+        // addCell(row, `<img src="${USERS_INFO[project.nightly_user].avatar}" class="avatar"/>`, is_repo_header=true);
+        // addCell(row, `<a href="${project.metadata.web_url}/-/pipelines">${project.metadata.name}</a>`, is_repo_header=true);
 
         // add table row
         for (date of dates_since(timeline_start)){
@@ -370,11 +364,13 @@ function render_project_pipelines() {
             addCell(row, cellValue);
         }
 
-
-        addCell(row, `<img src="${USERS_INFO[project.nightly_user].avatar}" class="avatar"/>`);
-        addCell(row, `<a href="${project.metadata.web_url}/-/pipelines">${project.metadata.name}</a>`);
+        addCell(row, `<img src="${USERS_INFO[project.nightly_user].avatar}" class="avatar"/> <a href="${project.metadata.web_url}/-/pipelines">${project.metadata.name}</a>`, is_repo_header=true);
+        // addCell(row, `<img src="${USERS_INFO[project.nightly_user].avatar}" class="avatar"/>`);
+        // addCell(row, `<a href="${project.metadata.web_url}/-/pipelines">${project.metadata.name}</a>`);
 
     }
+
+    table.parentNode.scrollLeft = 1000000;
 }
 
 //=================================

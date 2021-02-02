@@ -108,13 +108,38 @@ table a:visited {
   fill: rgba(209,209,240,0.8);
 }
 
+
+/* Sticky headers and first column */
+#table-container {
+  max-width: 100%;
+  max-height: calc(100vh - 50px);
+  overflow: scroll;
+  border: 1px solid #ddd;
+}
+.date-header {
+  position: sticky;
+  top: 0;
+  padding: 5px;
+  box-shadow: inset -1px 0px 0 #ddd;
+  z-index: 100;
+}
+.sticky-left  {
+  position: sticky;
+  left: 0;
+  box-shadow: inset -1px 0px 0 #ddd;
+  z-index: 10;
+}
+.sticky-right  {
+  position: sticky;
+  right: 0;
+  box-shadow: inset 1px 0px 0 #ddd;
+  z-index: 10;
+}
+
 #results-table {
     border-collapse: collapse;
-    margin: 25px 0;
     font-size: 0.9em;
     font-family: sans-serif;
-    /*min-width: 400px;*/
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
 }
 #results-table thead tr {
     text-align: left;
@@ -122,22 +147,30 @@ table a:visited {
 #results-table thead .date-header {
     background-color: #292961;
     font-weight: lighter;
-    color: #ddd;
+    color: #fff;
 }
 #results-table thead .date-header .today {
     font-weight: bold;
     color: #fff;
 }
 #results-table tbody tr {
-    border-bottom: 1px solid #dddddd;
+    border-bottom: 1px solid #ddd;
 }
 #results-table tbody tr:last-of-type {
-    border-bottom: 2px solid #292961;
+    border-bottom: 2px solid #ddd;
 }
 #results-table tbody tr.active-row {
     font-weight: bold;
     color: #292961;
 }
+/* Alternating row colors */
+#results-table > tbody > tr:nth-child(odd) > td {
+    background-color: #fff;
+}
+#results-table > tbody > tr:nth-child(even) > td {
+    background-color: #eee;
+}
+
 
 .pipeline-jobs ul {
     margin: 0px;
@@ -160,7 +193,13 @@ table a:visited {
 }
 
 .tooltip .tooltiptext {
-  visibility: hidden;
+  /*overflow: scroll;*/
+  white-space: normal;
+  overflow-wrap: break-word;
+  max-width: 300px;
+
+  /*visibility: hidden;*/
+  display: none;
 
   /*width: 300px;*/
 
@@ -176,7 +215,7 @@ table a:visited {
   margin-top: 10px;
 
   position: absolute;
-  z-index: 1;
+  z-index: 20;
 }
 
 
@@ -232,9 +271,11 @@ table .dashboard-error-message a {
 
 
 .tooltip:hover .tooltiptext {
-  visibility: visible;
+  /*visibility: visible;*/
+  display: inline;
 }
 
+/* Tooltip arrow */
 .tooltip .tooltiptext.left::after {
   content: " ";
   position: absolute;
