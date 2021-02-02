@@ -146,21 +146,21 @@ function to_html_node(text_or_node) {
     }
 }
 
-function addTH(row, text_or_node, colspan=1, is_date_header=true) {
+function addTH(row, text_or_node, class_list=[]) {
     let th = document.createElement("th");
     th.innerHTML = text_or_node;
-    th.colSpan = colspan;
-    if (is_date_header) {
-        th.classList.add("date-header");
+    if (class_list) {
+        console.log("adding", class_list);
+        th.classList.add(...class_list);
     }
     row.appendChild(th);
 }
 
-function addCell(row, text_or_node, is_repo_header=false) {
+function addCell(row, text_or_node, class_list=[]) {
     let cell = row.insertCell();
     cell.innerHTML = text_or_node;
-    if (is_repo_header) {
-        cell.classList.add("sticky-right");
+    if (class_list) {
+        cell.classList.add(...class_list);
     }
 }
 
@@ -314,8 +314,9 @@ function render_dates_header(table, timeline_start) {
         first_date = false;
         addTH(days_row, `${month_prefix} ${date.getDate()}`);
     }
-    addTH(days_row, `<span class="today">${today.getDate()}</span>`);
-    addTH(days_row, "", colspan=1, is_date_header=true);
+    month_prefix = today.toLocaleString('default', { month: 'short' });
+    addTH(days_row, `${month_prefix} ${today.getDate()} (last night)`, class_list=["today"]);
+    addTH(days_row, "");
 }
 
 function render_project_pipelines() {
@@ -345,11 +346,9 @@ function render_project_pipelines() {
 
         let row = table_body.insertRow();
 
-        // addCell(row, `<img src="${USERS_INFO[project.nightly_user].avatar}" class="avatar"/>`, is_repo_header=true);
-        // addCell(row, `<a href="${project.metadata.web_url}/-/pipelines">${project.metadata.name}</a>`, is_repo_header=true);
-
         // add table row
-        for (date of dates_since(timeline_start)){
+        let dates = dates_since(timeline_start);
+        for (date of dates){
             let pipelines = get_pipelines_for_date(project, date);
             let cellValue = '';
             if (pipelines.length == 0) {
@@ -361,12 +360,11 @@ function render_project_pipelines() {
                 let pipeline = pipelines[0];
                 cellValue = render_pipeline(pipeline, project);
             }
-            addCell(row, cellValue);
+            let class_list = (date === dates[dates.length-1]) ? ["today"] : [];
+            addCell(row, cellValue, class_list);
         }
 
-        addCell(row, `<img src="${USERS_INFO[project.nightly_user].avatar}" class="avatar"/> <a href="${project.metadata.web_url}/-/pipelines">${project.metadata.name}</a>`, is_repo_header=true);
-        // addCell(row, `<img src="${USERS_INFO[project.nightly_user].avatar}" class="avatar"/>`);
-        // addCell(row, `<a href="${project.metadata.web_url}/-/pipelines">${project.metadata.name}</a>`);
+        addCell(row, `<img src="${USERS_INFO[project.nightly_user].avatar}" class="avatar"/> <a href="${project.metadata.web_url}/-/pipelines">${project.metadata.name}</a>`, class_list=["sticky-right", "repo-name"]);
 
     }
 

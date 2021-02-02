@@ -108,19 +108,18 @@ table a:visited {
   fill: rgba(209,209,240,0.8);
 }
 
-
-/* Sticky headers and first column */
+/* Results table: sticky headers */
 #table-container {
   max-width: 100%;
   max-height: calc(100vh - 50px);
   overflow: scroll;
-  border: 1px solid #ddd;
+  border: solid #ddd;
+  border-width: 0px 0px 1px 1px;
 }
-.date-header {
+#results-table thead th {
   position: sticky;
   top: 0;
   padding: 5px;
-  box-shadow: inset -1px 0px 0 #ddd;
   z-index: 100;
 }
 .sticky-left  {
@@ -134,8 +133,13 @@ table a:visited {
   right: 0;
   box-shadow: inset 1px 0px 0 #ddd;
   z-index: 10;
+  border: 1px solid #ddd;
 }
-
+#results-table thead th:last-of-type {
+  box-shadow: inset 0px -1px 0 #ddd;
+  background: white;
+}
+/* Results table: other stuff */
 #results-table {
     border-collapse: collapse;
     font-size: 0.9em;
@@ -144,16 +148,13 @@ table a:visited {
 #results-table thead tr {
     text-align: left;
 }
-#results-table thead .date-header {
-    background-color: #292961;
+#results-table thead th {
+    background-color: #7d7dab;
     font-weight: lighter;
     color: #fff;
 }
-#results-table thead .date-header .today {
-    font-weight: bold;
-    color: #fff;
-}
 #results-table tbody tr {
+    border-top: 1px solid #ddd;
     border-bottom: 1px solid #ddd;
 }
 #results-table tbody tr:last-of-type {
@@ -169,6 +170,23 @@ table a:visited {
 }
 #results-table > tbody > tr:nth-child(even) > td {
     background-color: #eee;
+}
+/* Highlighting today */
+#results-table thead th.today {
+    font-weight: bold;
+    background-color: #292961;
+    box-shadow: inset 0px 2px 0 black;
+}
+#results-table tbody tr:last-of-type .today {
+  border-bottom: 2px solid black;
+}
+.today {
+  border: solid black;
+  border-width: 0px 2px 0px 2px;
+}
+
+.repo-name * {
+  vertical-align: middle;
 }
 
 
