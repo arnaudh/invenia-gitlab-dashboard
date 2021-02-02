@@ -12,7 +12,7 @@ stages:
   install_awscli
   package_install jq
 
-"Build dashboard"
+"Build dashboard":
   stage: build
   before_script:
     - *setup
