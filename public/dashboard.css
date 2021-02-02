@@ -5,6 +5,13 @@ body {
     padding: 5px;
 }
 
+h3 {
+  display: inline;
+}
+#toolbar {
+  display: inline;
+}
+
 #link-to-repo {
   float: right;
 }
@@ -44,12 +51,13 @@ table a:visited {
 }
 
 .form-line {
-  margin-bottom: 15px
+  /*margin-bottom: 15px*/
+  margin: 5px 0px 10px 10px;
 }
 
 .switch-field {
-    display: flex;
-    overflow: hidden;
+    display: inline-flex;
+    /*overflow: hidden;*/
 }
 .switch-field input {
     position: absolute !important;
@@ -65,7 +73,7 @@ table a:visited {
     font-size: 14px;
     line-height: 1;
     text-align: center;
-    padding: 8px 16px;
+    padding: 4px 8px;
     margin-right: -1px;
     border: 1px solid rgba(0, 0, 0, 0.2);
     transition: all 0.1s ease-in-out;
@@ -86,9 +94,11 @@ table a:visited {
 }
 
 .search-container {
+  display: inline-block;
   position: relative;
-  width: 500px;
+  width: 400px;
   height: 25px;
+  margin: 0 10px;
 }
 .search-container input {
   font-size: 1em;
@@ -111,7 +121,7 @@ table a:visited {
 /* Results table: sticky headers */
 #table-container {
   max-width: 100%;
-  max-height: calc(100vh - 50px);
+  max-height: calc(100vh - 80px);
   overflow: scroll;
   border: solid #ddd;
   border-width: 0px 0px 1px 1px;

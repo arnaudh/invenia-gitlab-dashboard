@@ -1,11 +1,12 @@
 
 const DEFAULTS = {
     "nightly": "all", // nightly user
-    "days": 7,
     "search": "", // search filter
     "display_jobs": true,
     "display_errors": true,
 }
+
+DAYS_AGO=30;
 
 const USERS_INFO = {
     "nightly-rse": {
@@ -323,7 +324,7 @@ function render_project_pipelines() {
     let state = window.history.state;
     
     let oldest_pipeline_date = get_oldest_pipeline_date(projects);
-    let min_timeline_start = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - state.days);
+    let min_timeline_start = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - DAYS_AGO);
     let timeline_start = new Date(Math.max(oldest_pipeline_date, min_timeline_start));
     
     let projects_sorted = sort_projects_by_pipeline_status(projects, timeline_start);
@@ -395,7 +396,6 @@ function update_state_from_url() {
     let search_params = new URLSearchParams(window.location.search);
     let state = {
         "nightly": search_params.get('nightly') || DEFAULTS['nightly'],
-        "days": search_params.get('days') || DEFAULTS['days'],
         "search": search_params.get('search') || DEFAULTS['search'],
         "display_errors": parse_boolean(search_params.get('display_errors'), DEFAULTS['display_errors']),
         "display_jobs": parse_boolean(search_params.get('display_jobs'), DEFAULTS['display_jobs']),
@@ -409,7 +409,6 @@ function update_state_from_url() {
 function update_state_from_user_inputs() {
     let state = {
         nightly: document.querySelector('input[name="nightly"]:checked').value,
-        days: parseInt(document.querySelector('input[name="days"]:checked').value),
         search: document.querySelector('#search').value,
         display_errors: document.querySelector('#display-errors').checked,
         display_jobs: document.querySelector('#display-jobs').checked,
@@ -428,7 +427,6 @@ window.onpopstate = function(event) {
 function update_user_inputs_from_state() {
     let state = window.history.state;
     document.getElementById(`nightly-${state.nightly}`).checked = true;
-    document.getElementById(`days-${state.days}`).checked = true;
     document.getElementById(`search`).value = state.search;
     document.getElementById(`display-errors`).checked = state.display_errors;
     document.getElementById(`display-jobs`).checked = state.display_jobs;
