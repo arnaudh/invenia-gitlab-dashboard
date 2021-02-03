@@ -163,14 +163,14 @@ table a:visited {
     font-weight: lighter;
     color: #fff;
 }
-#results-table tbody tr {
+#results-table > tbody > tr {
     border-top: 1px solid #ddd;
     border-bottom: 1px solid #ddd;
 }
-#results-table tbody tr:last-of-type {
+#results-table > tbody > tr:last-of-type {
     border-bottom: 2px solid #ddd;
 }
-#results-table tbody tr.active-row {
+#results-table > tbody > tr.active-row {
     font-weight: bold;
     color: #292961;
 }
@@ -187,7 +187,7 @@ table a:visited {
     background-color: #292961;
     box-shadow: inset 0px 2px 0 black;
 }
-#results-table tbody tr:last-of-type .today {
+#results-table > tbody > tr:last-of-type .today {
   border-bottom: 2px solid black;
 }
 .today {
@@ -248,6 +248,7 @@ table a:visited {
 
 
 .tooltip .tooltiptext.error-message {
+  min-width: 300px;
   border: none;
   background-color:  black;
   color: #fff;
@@ -262,12 +263,8 @@ table a:visited {
   font-family: "Menlo", "DejaVu Sans Mono", "Liberation Mono", "Consolas", "Ubuntu Mono", "Courier New", "andale mono", "lucida console", monospace;
 }
 
-.tooltip .tooltiptext.dashboard-error-message {
-  border: none;
-  background-color:  #999;
-  color: #fff;
-}
 .dashboard-error-message {
+  min-width: 200px;
   background-color: #999;
   color: #fff;
   border-radius: 4px;
