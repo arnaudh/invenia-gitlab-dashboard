@@ -6,7 +6,7 @@ body {
     padding: 5px;
 }
 
-h3 {
+h2 {
   display: inline;
 }
 #toolbar {
@@ -120,9 +120,9 @@ table a:visited {
 }
 
 /* Results table: sticky headers */
-#table-container {
+#table-container:not(.loading) {
   max-width: 100%;
-  max-height: calc(100vh - 80px);
+  max-height: calc(100vh - 70px);
   overflow: scroll;
   border: solid #ddd;
   border-width: 0px 0px 1px 1px;
@@ -132,6 +132,7 @@ table a:visited {
   top: 0;
   padding: 5px;
   z-index: 100;
+  box-shadow: inset 0px 1px 0 #ddd, inset 0px -1px 0 #ddd;
 }
 .sticky-left  {
   position: sticky;
@@ -145,6 +146,7 @@ table a:visited {
   box-shadow: inset 2px 0px 0 #ddd, inset -2px 0px 0 #ddd;
   z-index: 10;
   padding: 0 3px;
+  text-align: left;
 }
 #results-table thead th:last-of-type {
   box-shadow: inset 0px -1px 0 #ddd;
@@ -164,6 +166,9 @@ table a:visited {
     font-weight: lighter;
     color: #fff;
 }
+#results-table thead th:not(:first-of-type):not(.today) {
+  border-left: 1px dashed #ddd;
+}
 #results-table > tbody > tr {
     border-top: 1px solid #ddd;
     border-bottom: 1px solid #ddd;
@@ -171,9 +176,8 @@ table a:visited {
 #results-table > tbody > tr:last-of-type {
     border-bottom: 2px solid #ddd;
 }
-#results-table > tbody > tr > td:not(.today):not(.sticky-right) {
+#results-table > tbody > tr > td:not(:first-of-type):not(.today):not(.sticky-right) {
     border-left: 1px dashed #eee;
-    border-right: 1px dashed #eee;
 }
 /* Alternating row colors */
 #results-table > tbody > tr:nth-child(odd) > td {
@@ -218,6 +222,10 @@ table.pipeline-jobs {
 }
 table td {
   padding: 0;
+  text-align: center;
+}
+table th {
+  text-align: center;
 }
 
 

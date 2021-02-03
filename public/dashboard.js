@@ -474,7 +474,7 @@ function update_results_from_state() {
 
 let table = document.getElementById('results-table');
 
-table.classList.add("loading");
+table.parentNode.classList.add("loading");
 
 Promise.all([
     fetch('combined_small.json'),
@@ -488,7 +488,7 @@ Promise.all([
         return response.json();
     }));
 }).then(function (data) {
-    table.classList.remove("loading");
+    table.parentNode.classList.remove("loading");
     projects = data[0];
     patterns_in_logs = data[1];
     if (!isSameDay(get_newest_pipeline_date(projects), Date.now())) {
@@ -496,7 +496,7 @@ Promise.all([
     }
     update_state_from_url();
 }).catch(function (error) {
-    table.classList.remove("loading");
+    table.parentNode.classList.remove("loading");
     show_error(`ERROR: ${error}`);
     throw error;
 });
