@@ -18,7 +18,8 @@ const USERS_INFO = {
         "avatar": "images/nightly-dev.jpg"
     },
 }
-const ERROR_STRING_DISPLAY_LIMIT = 30;
+const JOB_STRING_DISPLAY_LIMIT = 1000;
+const ERROR_STRING_DISPLAY_LIMIT = 10;
 
 let projects;
 let patterns_in_logs;
@@ -191,7 +192,7 @@ function render_pipeline(pipeline, project) {
 }
 
 function limit_string(s, length) {
-    return s.length > length ? s.substring(0, length - 3) + "<span>…</span>" : s;
+    return s.length > length ? s.substring(0, length - 3) + "…" : s;
 }
 
 function string_matches_filter(error_string, filter_string) {
@@ -249,7 +250,7 @@ function render_job(job, project) {
             html += `<td>`;
             html += `<span>`;
             html += `<span class="tooltip">`;
-            html += `<a href="${job.web_url}">${emojize(job.name)}</a>`;
+            html += `<a href="${job.web_url}">${shorten_job_name(job.name)}</a>`;
             // html += `<a href="${job.web_url}">${job.name}</a>`;
             html += `<span><span class="tooltiptext left">${job.name}</span></span>`;
             html += `</span>`;
@@ -263,7 +264,7 @@ function render_job(job, project) {
                 html += `<li>`;
                 html += `<span class="tooltip dashboard-error-message">`;
                 html += `?`
-                html += `<span><span class="tooltiptext center dashboard-error-message">? (No known error pattern was found. You can add patterns <a href="https://gitlab.invenia.ca/invenia/gitlab-dashboard/-/blob/master/find_patterns_in_logs.py">here</a>)</span></span>`;
+                html += `<span><span class="tooltiptext center dashboard-error-message">No known error pattern was found. You can add patterns <a href="https://gitlab.invenia.ca/invenia/gitlab-dashboard/-/blob/master/find_patterns_in_logs.py">here</a></span></span>`;
                 html += `</span>`;
                 html += `</li>`;
             } else {
@@ -291,13 +292,42 @@ function render_job(job, project) {
 function emojize(text) {
     return text
         .replaceAll(/[(),]/gi, '')
-        .replaceAll(/linux/gi, '<span title="Linux">🐧</span>')
-        .replaceAll(/mac/gi, '<span title="Mac">🍏</span>') // 
-        .replaceAll(/nightly/gi, '<span title="Nightly">🌙</span>') // ☪☾✩☽🌙🌚🌕
-        .replaceAll(/High-Memory/gi, '<span title="High-Memory">💾</span>') // 💾
-        .replaceAll(/Documentation/gi, '<span title="Documentation">📜</span>') // 📜📄📝
+        // .replaceAll(/linux/gi, '<span title="Linux">🐧</span>')
+        // .replaceAll(/mac/gi, '<span title="Mac">🍏</span>') // 
+        // .replaceAll(/nightly/gi, '<span title="Nightly">🌙</span>') // ☪☾✩☽🌙🌚🌕
+        // .replaceAll(/High-Memory/gi, '<span title="High-Memory">💾</span>') // 💾
+        // .replaceAll(/Documentation/gi, '<span title="Documentation">📜</span>') // 📜📄📝
+        .replaceAll(/linux/gi, '🐧')
+        .replaceAll(/mac/gi, '🍏') // 
+        .replaceAll(/nightly/gi, '🌙') // ☪☾✩☽🌙🌚🌕
+        .replaceAll(/High-Memory/gi, '💾') // 💾
+        .replaceAll(/Documentation/gi, '📜') // 📜📄📝
+ 
         // .replaceAll(/((32-bit|i686)\s*)+/gi, '<span title="32-bit (i686)">32</span>')
         // .replaceAll(/((64-bit|x86_64)\s*)+/gi, '<span title="64-bit (x86_64)">64</span>')
+}
+function shorten_job_name(text) {
+    let emojized = emojize(text);
+    let emojis = emojized.replaceAll(/[ -~]/gi, '');
+    let non_emojis = emojized.replaceAll(/[^ -~]/gi, '');
+    let version_numbers = [...non_emojis.matchAll(/\d\.\d/gi)].map(m => m[0]).join(' ');
+    let non_version_numbers = non_emojis.replaceAll(/\d\.\d/gi, '');
+    let abbreviated = abbreviate(non_version_numbers);
+    console.log('text', text);
+    console.log('emojized', emojized);
+    console.log('emojis', emojis);
+    console.log('non_emojis', non_emojis);
+    console.log('version_numbers', version_numbers);
+    console.log('abbreviated', abbreviated);
+
+    return `${version_numbers} ${emojis} ${abbreviated}`;
+}
+
+function abbreviate(str) {
+    // take the first letter of each word
+    let matches = str.match(/\b(\w)/g);
+    let acronym = matches ? matches.join(' ') : '';
+    return acronym;
 }
 
 function render_dates_header(table, timeline_start) {
