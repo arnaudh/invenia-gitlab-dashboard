@@ -1,6 +1,7 @@
 body {
     white-space: nowrap;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", Ubuntu, Cantarell, "Helvetica Neue", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    font-size: 13px;
     color: #303030;
     padding: 5px;
 }
@@ -141,9 +142,9 @@ table a:visited {
 .sticky-right  {
   position: sticky;
   right: 0;
-  box-shadow: inset 1px 0px 0 #ddd;
+  box-shadow: inset 2px 0px 0 #ddd, inset -2px 0px 0 #ddd;
   z-index: 10;
-  border: 1px solid #ddd;
+  padding: 0 3px;
 }
 #results-table thead th:last-of-type {
   box-shadow: inset 0px -1px 0 #ddd;
@@ -170,9 +171,9 @@ table a:visited {
 #results-table > tbody > tr:last-of-type {
     border-bottom: 2px solid #ddd;
 }
-#results-table > tbody > tr.active-row {
-    font-weight: bold;
-    color: #292961;
+#results-table > tbody > tr > td:not(.today):not(.sticky-right) {
+    border-left: 1px dashed #eee;
+    border-right: 1px dashed #eee;
 }
 /* Alternating row colors */
 #results-table > tbody > tr:nth-child(odd) > td {
@@ -200,6 +201,9 @@ table a:visited {
 }
 
 
+table.pipeline-jobs {
+  border-spacing: 0
+}
 .pipeline-jobs ul {
     margin: 0px;
     list-style-type: none;
@@ -207,10 +211,13 @@ table a:visited {
     /*font-style: italic;*/
 }
 .pipeline-jobs li {
-  padding: 4px
+  padding: 2px;
 }
 .pipeline-jobs td {
     vertical-align: text-top;
+}
+table td {
+  padding: 0;
 }
 
 
@@ -220,10 +227,10 @@ table a:visited {
   /*border-bottom: 1px dotted black;*/
 }
 
-.tooltip .tooltiptext {
+.tooltiptext {
   /*overflow: scroll;*/
   overflow-wrap: break-word;
-  max-width: 300px;
+  max-width: 240px;
 
   /*visibility: hidden;*/
   display: none;
@@ -237,8 +244,8 @@ table a:visited {
   border: 1px solid black;
   /*color: #fff;*/
   text-align: center;
-  border-radius: 4px;
-  padding: 3px;
+  border-radius: 2px;
+  padding: 1px;
   margin-top: 10px;
 
   position: absolute;
@@ -248,7 +255,8 @@ table a:visited {
 
 .tooltip .tooltiptext.error-message {
   white-space: normal;
-  min-width: 300px;
+  /* a bit small, but necessary to keep it in view for the right most column */
+  width: 215px;
   border: none;
   background-color:  black;
   color: #fff;
@@ -257,8 +265,8 @@ table a:visited {
 .error-message {
   background-color: #999;
   color: #fff;
-  border-radius: 4px;
-  padding: 3px;
+  border-radius: 2px;
+  padding: 1px;
   margin-top: 10px;
   font-family: "Menlo", "DejaVu Sans Mono", "Liberation Mono", "Consolas", "Ubuntu Mono", "Courier New", "andale mono", "lucida console", monospace;
 }
@@ -311,4 +319,15 @@ table .dashboard-error-message a {
   border-width: 5px;
   border-style: solid;
   border-color: transparent transparent transparent black;
+}
+
+
+/* Fix emoji spacing when connecting a non-retina screen */
+/* https://stackoverflow.com/a/44145771/533591 */
+@media
+not screen and (min-device-pixel-ratio: 2),
+not screen and (min-resolution: 192dpi) {
+  span.emoji {
+    margin-right: 5px;
+  }
 }

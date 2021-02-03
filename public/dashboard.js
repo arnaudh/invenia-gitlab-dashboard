@@ -152,7 +152,6 @@ function addTH(row, text_or_node, class_list=[]) {
     let th = document.createElement("th");
     th.innerHTML = text_or_node;
     if (class_list) {
-        console.log("adding", class_list);
         th.classList.add(...class_list);
     }
     row.appendChild(th);
@@ -296,21 +295,41 @@ function emojize(text) {
         // .replaceAll(/nightly/gi, '<span title="Nightly">🌙</span>') // ☪☾✩☽🌙🌚🌕
         // .replaceAll(/High-Memory/gi, '<span title="High-Memory">💾</span>') // 💾
         // .replaceAll(/Documentation/gi, '<span title="Documentation">📜</span>') // 📜📄📝
-        .replaceAll(/linux/gi, '🐧')
-        .replaceAll(/mac/gi, '🍏') // 
-        .replaceAll(/nightly/gi, '🌙') // ☪☾✩☽🌙🌚🌕
-        .replaceAll(/High-Memory/gi, '💾') // 💾
-        .replaceAll(/Documentation/gi, '📜') // 📜📄📝
-        .replaceAll(/(32-bit|i686)/gi, '32')
-        .replaceAll(/(64-bit|x86_64)/gi, '64')
+
+        // .replaceAll(/linux/gi, '🐧')
+        // .replaceAll(/mac(os)?/gi, '🍏') // 
+        // .replaceAll(/nightly/gi, '🌙') // ☪☾✩☽🌙🌚🌕
+        // .replaceAll(/High-Memory/gi, '💾') // 💾
+        // .replaceAll(/Documentation/gi, '📜') // 📜📄📝
+        // .replaceAll(/(32-bit|i686)/gi, '32')
+        // .replaceAll(/(64-bit|x86_64)/gi, '64')
+
+        .replaceAll(/linux/gi, '<span class="emoji">🐧</span>')
+        .replaceAll(/mac(os)?/gi, '<span class="emoji">🍏</span>') // 
+        .replaceAll(/nightly/gi, '<span class="emoji">🌙</span>') // ☪☾✩☽🌙🌚🌕
+        .replaceAll(/High-Memory/gi, '<span class="emoji">💾</span>') // 💾
+        .replaceAll(/Documentation/gi, '<span class="emoji">📜</span>') // 📜📄📝
+        .replaceAll(/(i686|32-bit)/gi, '32')
+        .replaceAll(/(x86_64|64-bit)/gi, '64')
+
         // .replaceAll(/((32-bit|i686)\s*)+/gi, '<span title="32-bit (i686)">32</span>')
         // .replaceAll(/((64-bit|x86_64)\s*)+/gi, '<span title="64-bit (x86_64)">64</span>')
 }
 
 function shorten_job_name(text) {
-    let text_no_punctuation = text.replaceAll(/[(),]/gi, '');
-    return emojize(text_no_punctuation)
-        .replaceAll(/([a-zA-Z_.-])[a-zA-Z_.-]*/gi, '$1'); // Replace each word by its first letter
+    let no_punctuation = text.replaceAll(/[(),]/gi, '');
+    let words = no_punctuation.split(' ')
+    let words_shortened = words.map(function (word) {
+        let emojized = emojize(word);
+        if (emojized !== word) { // word has been emojized
+            return emojized;
+        } else {
+            // replace word by its first letter
+            let abbreviated = emojized.replaceAll(/([a-zA-Z_.-]{1})[a-zA-Z_.-]*/gi, '$1');
+            return abbreviated;
+        }
+    });
+    return words_shortened.join('');
 }
 
 function render_dates_header(table, timeline_start) {
