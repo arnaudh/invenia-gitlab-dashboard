@@ -6,7 +6,8 @@ const DEFAULTS = {
     "display_errors": true,
 }
 
-DAYS_AGO=30;
+// Would need to modify the download script to go further
+DAYS_AGO=29;
 
 const USERS_INFO = {
     "nightly-rse": {
