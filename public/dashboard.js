@@ -291,7 +291,6 @@ function render_job(job, project) {
 
 function emojize(text) {
     return text
-        .replaceAll(/[(),]/gi, '')
         // .replaceAll(/linux/gi, '<span title="Linux">🐧</span>')
         // .replaceAll(/mac/gi, '<span title="Mac">🍏</span>') // 
         // .replaceAll(/nightly/gi, '<span title="Nightly">🌙</span>') // ☪☾✩☽🌙🌚🌕
@@ -302,32 +301,16 @@ function emojize(text) {
         .replaceAll(/nightly/gi, '🌙') // ☪☾✩☽🌙🌚🌕
         .replaceAll(/High-Memory/gi, '💾') // 💾
         .replaceAll(/Documentation/gi, '📜') // 📜📄📝
- 
+        .replaceAll(/(32-bit|i686)/gi, '32')
+        .replaceAll(/(64-bit|x86_64)/gi, '64')
         // .replaceAll(/((32-bit|i686)\s*)+/gi, '<span title="32-bit (i686)">32</span>')
         // .replaceAll(/((64-bit|x86_64)\s*)+/gi, '<span title="64-bit (x86_64)">64</span>')
 }
+
 function shorten_job_name(text) {
-    let emojized = emojize(text);
-    let emojis = emojized.replaceAll(/[ -~]/gi, '');
-    let non_emojis = emojized.replaceAll(/[^ -~]/gi, '');
-    let version_numbers = [...non_emojis.matchAll(/\d\.\d/gi)].map(m => m[0]).join(' ');
-    let non_version_numbers = non_emojis.replaceAll(/\d\.\d/gi, '');
-    let abbreviated = abbreviate(non_version_numbers);
-    console.log('text', text);
-    console.log('emojized', emojized);
-    console.log('emojis', emojis);
-    console.log('non_emojis', non_emojis);
-    console.log('version_numbers', version_numbers);
-    console.log('abbreviated', abbreviated);
-
-    return `${version_numbers} ${emojis} ${abbreviated}`;
-}
-
-function abbreviate(str) {
-    // take the first letter of each word
-    let matches = str.match(/\b(\w)/g);
-    let acronym = matches ? matches.join(' ') : '';
-    return acronym;
+    let text_no_punctuation = text.replaceAll(/[(),]/gi, '');
+    return emojize(text_no_punctuation)
+        .replaceAll(/([a-zA-Z_.-])[a-zA-Z_.-]*/gi, '$1'); // Replace each word by its first letter
 }
 
 function render_dates_header(table, timeline_start) {

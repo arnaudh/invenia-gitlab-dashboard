@@ -222,7 +222,6 @@ table a:visited {
 
 .tooltip .tooltiptext {
   /*overflow: scroll;*/
-  white-space: normal;
   overflow-wrap: break-word;
   max-width: 300px;
 
@@ -248,6 +247,7 @@ table a:visited {
 
 
 .tooltip .tooltiptext.error-message {
+  white-space: normal;
   min-width: 300px;
   border: none;
   background-color:  black;
@@ -264,6 +264,7 @@ table a:visited {
 }
 
 .dashboard-error-message {
+  white-space: normal;
   min-width: 200px;
   background-color: #999;
   color: #fff;
