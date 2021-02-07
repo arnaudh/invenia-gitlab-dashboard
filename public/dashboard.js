@@ -247,10 +247,10 @@ function render_job(job, project) {
         // html = `<table>`;
         html = `<tr>`;
         if (state.display_jobs) {
-            html += `<td>`;
+            html += `<td class="job-name">`;
             html += `<span>`;
             html += `<span class="tooltip">`;
-            html += `<a href="${job.web_url}">${shorten_job_name(job.name)}</a>`;
+            html += `<a href="${job.web_url}" target="_blank" rel="noopener noreferrer">${shorten_job_name(job.name)}</a>`;
             // html += `<a href="${job.web_url}">${job.name}</a>`;
             html += `<span><span class="tooltiptext left">${job.name}</span></span>`;
             html += `</span>`;
@@ -258,7 +258,7 @@ function render_job(job, project) {
             html += `</td>`;
         }
         if (state.display_errors) {
-            html += `<td>`;
+            html += `<td class="error-messages">`;
             html += `<ul>`;
             if (all_patterns.length === 0) {
                 html += `<li>`;

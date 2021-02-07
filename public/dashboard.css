@@ -206,7 +206,16 @@ table a:visited {
 
 
 table.pipeline-jobs {
-  border-spacing: 0
+  border-spacing: 0;
+  width: 100%;
+}
+table.pipeline-jobs td.job-name {
+  text-align: right;
+  width: 50%;
+}
+table.pipeline-jobs td.error-messages {
+  text-align: left;
+  width: 50%;
 }
 .pipeline-jobs ul {
     margin: 0px;
@@ -284,8 +293,8 @@ table th {
   min-width: 200px;
   background-color: #999;
   color: #fff;
-  border-radius: 4px;
-  padding: 3px 6px 3px 3px;
+  border-radius: 2px;
+  padding: 1px 3px 1px 1px;
   margin-top: 10px;
   font-style: italic;
 }
