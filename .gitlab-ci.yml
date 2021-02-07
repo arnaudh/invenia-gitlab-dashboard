@@ -3,6 +3,7 @@ include:
     file: /templates/ci-init.yml
 
 stages:
+  - build
   - deploy
 
 .setup: &setup
@@ -11,15 +12,32 @@ stages:
   install_awscli
   package_install jq
 
-pages:
-  stage: deploy
+"Build dashboard":
+  stage: build
   before_script:
     - *setup
-  retry:
-    max: 2
   script:
-  - ./download_pipelines_info.sh
-  - ./find_patterns_in_logs.py
+    - ./download_pipelines_info.sh
+    - ./find_patterns_in_logs.py
   artifacts:
     paths:
     - public
+
+pages:
+  stage: deploy
+  only:
+    - master
+  dependencies:
+    - "Build dashboard"
+  script:
+    # Used to validate the pipeline that generated the published documentation
+    - echo "$CI_PIPELINE_ID" > public/pipeline_id.html
+  artifacts:
+    # As the dashboard is re-deployed daily the expiry just ensures that old artifacts
+    # are eventually cleaned up
+    expire_in: 1 week
+    paths:
+      - public/
+  retry:
+    max: 2
+    when: runner_system_failure  # Work around issues with our docker-ci runners scaling down

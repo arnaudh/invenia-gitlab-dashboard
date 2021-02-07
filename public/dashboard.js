@@ -1,11 +1,13 @@
 
 const DEFAULTS = {
     "nightly": "all", // nightly user
-    "days": 7,
     "search": "", // search filter
     "display_jobs": true,
     "display_errors": true,
 }
+
+// Would need to modify the download script to go further
+DAYS_AGO=29;
 
 const USERS_INFO = {
     "nightly-rse": {
@@ -17,7 +19,8 @@ const USERS_INFO = {
         "avatar": "images/nightly-dev.jpg"
     },
 }
-const ERROR_STRING_DISPLAY_LIMIT = 30;
+const JOB_STRING_DISPLAY_LIMIT = 1000;
+const ERROR_STRING_DISPLAY_LIMIT = 10;
 
 let projects;
 let patterns_in_logs;
@@ -146,19 +149,21 @@ function to_html_node(text_or_node) {
     }
 }
 
-function addTH(row, text_or_node, colspan=1, is_date_header=true) {
+function addTH(row, text_or_node, class_list=[]) {
     let th = document.createElement("th");
     th.innerHTML = text_or_node;
-    th.colSpan = colspan;
-    if (is_date_header) {
-        th.classList.add("date-header");
+    if (class_list) {
+        th.classList.add(...class_list);
     }
     row.appendChild(th);
 }
 
-function addCell(row, text_or_node) {
+function addCell(row, text_or_node, class_list=[]) {
     let cell = row.insertCell();
     cell.innerHTML = text_or_node;
+    if (class_list) {
+        cell.classList.add(...class_list);
+    }
 }
 
 function render_pipeline(pipeline, project) {
@@ -187,7 +192,7 @@ function render_pipeline(pipeline, project) {
 }
 
 function limit_string(s, length) {
-    return s.length > length ? s.substring(0, length - 3) + "<span>…</span>" : s;
+    return s.length > length ? s.substring(0, length - 3) + "…" : s;
 }
 
 function string_matches_filter(error_string, filter_string) {
@@ -242,10 +247,10 @@ function render_job(job, project) {
         // html = `<table>`;
         html = `<tr>`;
         if (state.display_jobs) {
-            html += `<td>`;
+            html += `<td class="job-name">`;
             html += `<span>`;
             html += `<span class="tooltip">`;
-            html += `<a href="${job.web_url}">${emojize(job.name)}</a>`;
+            html += `<a href="${job.web_url}" target="_blank" rel="noopener noreferrer">${shorten_job_name(job.name)}</a>`;
             // html += `<a href="${job.web_url}">${job.name}</a>`;
             html += `<span><span class="tooltiptext left">${job.name}</span></span>`;
             html += `</span>`;
@@ -253,13 +258,13 @@ function render_job(job, project) {
             html += `</td>`;
         }
         if (state.display_errors) {
-            html += `<td>`;
+            html += `<td class="error-messages">`;
             html += `<ul>`;
             if (all_patterns.length === 0) {
                 html += `<li>`;
                 html += `<span class="tooltip dashboard-error-message">`;
                 html += `?`
-                html += `<span><span class="tooltiptext center dashboard-error-message">? (No known error pattern was found. You can add patterns <a href="https://gitlab.invenia.ca/invenia/gitlab-dashboard/-/blob/master/find_patterns_in_logs.py">here</a>)</span></span>`;
+                html += `<span><span class="tooltiptext center dashboard-error-message">No known error pattern was found. You can add patterns <a href="https://gitlab.invenia.ca/invenia/gitlab-dashboard/-/blob/master/find_patterns_in_logs.py">here</a></span></span>`;
                 html += `</span>`;
                 html += `</li>`;
             } else {
@@ -286,49 +291,77 @@ function render_job(job, project) {
 
 function emojize(text) {
     return text
-        .replaceAll(/[(),]/gi, '')
-        .replaceAll(/linux/gi, '<span title="Linux">🐧</span>')
-        .replaceAll(/mac/gi, '<span title="Mac">🍏</span>') // 
-        .replaceAll(/nightly/gi, '<span title="Nightly">🌙</span>') // ☪☾✩☽🌙🌚🌕
-        .replaceAll(/High-Memory/gi, '<span title="High-Memory">💾</span>') // 💾
-        .replaceAll(/Documentation/gi, '<span title="Documentation">📜</span>') // 📜📄📝
+        // .replaceAll(/linux/gi, '<span title="Linux">🐧</span>')
+        // .replaceAll(/mac/gi, '<span title="Mac">🍏</span>') // 
+        // .replaceAll(/nightly/gi, '<span title="Nightly">🌙</span>') // ☪☾✩☽🌙🌚🌕
+        // .replaceAll(/High-Memory/gi, '<span title="High-Memory">💾</span>') // 💾
+        // .replaceAll(/Documentation/gi, '<span title="Documentation">📜</span>') // 📜📄📝
+
+        // .replaceAll(/linux/gi, '🐧')
+        // .replaceAll(/mac(os)?/gi, '🍏') // 
+        // .replaceAll(/nightly/gi, '🌙') // ☪☾✩☽🌙🌚🌕
+        // .replaceAll(/High-Memory/gi, '💾') // 💾
+        // .replaceAll(/Documentation/gi, '📜') // 📜📄📝
+        // .replaceAll(/(32-bit|i686)/gi, '32')
+        // .replaceAll(/(64-bit|x86_64)/gi, '64')
+
+        .replaceAll(/linux/gi, '<span class="emoji">🐧</span>')
+        .replaceAll(/mac(os)?/gi, '<span class="emoji">🍏</span>') // 
+        .replaceAll(/nightly/gi, '<span class="emoji">🌙</span>') // ☪☾✩☽🌙🌚🌕
+        .replaceAll(/High-Memory/gi, '<span class="emoji">💾</span>') // 💾
+        .replaceAll(/Documentation/gi, '<span class="emoji">📜</span>') // 📜📄📝
+        .replaceAll(/(i686|32-bit)/gi, '32')
+        .replaceAll(/(x86_64|64-bit)/gi, '64')
+
         // .replaceAll(/((32-bit|i686)\s*)+/gi, '<span title="32-bit (i686)">32</span>')
         // .replaceAll(/((64-bit|x86_64)\s*)+/gi, '<span title="64-bit (x86_64)">64</span>')
 }
 
+function shorten_job_name(text) {
+    let no_punctuation = text.replaceAll(/[(),]/gi, '');
+    let words = no_punctuation.split(' ')
+    let words_shortened = words.map(function (word) {
+        let emojized = emojize(word);
+        if (emojized !== word) { // word has been emojized
+            return emojized;
+        } else {
+            // replace word by its first letter
+            let abbreviated = emojized.replaceAll(/([a-zA-Z_.-]{1})[a-zA-Z_.-]*/gi, '$1');
+            return abbreviated;
+        }
+    });
+    return words_shortened.join('');
+}
+
 function render_dates_header(table, timeline_start) {
     let dates_header = table.createTHead();
-    let date_row_months = dates_header.insertRow();
-    addTH(date_row_months, "", colspan=2, is_date_header=false);
+    // Days row
+    let days_row = dates_header.insertRow();
+    let dates_utc = dates_since(timeline_start);
+    // Show days as being the previous one.
+    // Nightly pipelines run at 8pm Winnipeg time, which is ~2am UTC,
+    // hence we subtract 1 day for display purposes
+    let dates = dates_utc.map(d => add_days(d, -1));
+    let today = dates.pop();
     let first_date = true;
-    let dates_to_show_months = [];
-    for (let date of dates_since(timeline_start)){
-        if (first_date || date.getDate() === 1) {
-            dates_to_show_months.push(date);
+    for (let date of dates){
+        let month_prefix = '';
+        if (first_date || date.getDate() === 1){ 
+            month_prefix = date.toLocaleString('default', { month: 'short' });
         }
         first_date = false;
+        addTH(days_row, `${month_prefix} ${date.getDate()}`);
     }
-    for (let [i, date] of dates_to_show_months.entries()){
-        let month = date.toLocaleString('default', { month: 'long' });
-        let next_date = dates_to_show_months[i+1] || add_days(Date.now(), 1);
-        let colspan = daysBetween(date, next_date);
-        addTH(date_row_months, `${month}`, colspan)
-    }
-    let date_row_days = dates_header.insertRow();
-    addTH(date_row_days, "", colspan=2, is_date_header=false);
-    let dates = dates_since(timeline_start);
-    let today = dates.pop();
-    for (let date of dates){
-        addTH(date_row_days, `${date.getDate()}`);
-    }
-    addTH(date_row_days, `<span class="today">${today.getDate()}</span>`);
+    month_prefix = today.toLocaleString('default', { month: 'short' });
+    addTH(days_row, `${month_prefix} ${today.getDate()} (last night)`, class_list=["today"]);
+    addTH(days_row, "");
 }
 
 function render_project_pipelines() {
     let state = window.history.state;
     
     let oldest_pipeline_date = get_oldest_pipeline_date(projects);
-    let min_timeline_start = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - state.days);
+    let min_timeline_start = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - DAYS_AGO);
     let timeline_start = new Date(Math.max(oldest_pipeline_date, min_timeline_start));
     
     let projects_sorted = sort_projects_by_pipeline_status(projects, timeline_start);
@@ -351,11 +384,9 @@ function render_project_pipelines() {
 
         let row = table_body.insertRow();
 
-        addCell(row, `<img src="${USERS_INFO[project.nightly_user].avatar}" class="avatar"/>`);
-        addCell(row, `<a href="${project.metadata.web_url}/-/pipelines">${project.metadata.name}</a>`);
-
         // add table row
-        for (date of dates_since(timeline_start)){
+        let dates = dates_since(timeline_start);
+        for (date of dates){
             let pipelines = get_pipelines_for_date(project, date);
             let cellValue = '';
             if (pipelines.length == 0) {
@@ -367,14 +398,15 @@ function render_project_pipelines() {
                 let pipeline = pipelines[0];
                 cellValue = render_pipeline(pipeline, project);
             }
-            addCell(row, cellValue);
+            let class_list = (date === dates[dates.length-1]) ? ["today"] : [];
+            addCell(row, cellValue, class_list);
         }
 
-
-        addCell(row, `<img src="${USERS_INFO[project.nightly_user].avatar}" class="avatar"/>`);
-        addCell(row, `<a href="${project.metadata.web_url}/-/pipelines">${project.metadata.name}</a>`);
+        addCell(row, `<img src="${USERS_INFO[project.nightly_user].avatar}" class="avatar"/> <a href="${project.metadata.web_url}/-/pipelines">${project.metadata.name}</a>`, class_list=["sticky-right", "repo-name"]);
 
     }
+
+    table.parentNode.scrollLeft = 1000000;
 }
 
 //=================================
@@ -387,14 +419,23 @@ function state_to_search_string(state) {
     return search_string === "" ? window.location.pathname : `?${search_string}`;
 }
 
+function parse_boolean(str, default_value) {
+    if (str === 'true') {
+        return true;
+    } else if (str === 'false') {
+        return false
+    } else {
+        return default_value;
+    }
+}
+
 function update_state_from_url() {
     let search_params = new URLSearchParams(window.location.search);
     let state = {
         "nightly": search_params.get('nightly') || DEFAULTS['nightly'],
-        "days": search_params.get('days') || DEFAULTS['days'],
         "search": search_params.get('search') || DEFAULTS['search'],
-        "display_errors": search_params.get('display_errors') == 'true' || DEFAULTS['display_errors'],
-        "display_jobs": search_params.get('display_jobs') == 'true' || DEFAULTS['display_jobs'],
+        "display_errors": parse_boolean(search_params.get('display_errors'), DEFAULTS['display_errors']),
+        "display_jobs": parse_boolean(search_params.get('display_jobs'), DEFAULTS['display_jobs']),
     };
     console.log('state', state);
     let res = window.history.replaceState(state, "", state_to_search_string(state));
@@ -405,7 +446,6 @@ function update_state_from_url() {
 function update_state_from_user_inputs() {
     let state = {
         nightly: document.querySelector('input[name="nightly"]:checked').value,
-        days: parseInt(document.querySelector('input[name="days"]:checked').value),
         search: document.querySelector('#search').value,
         display_errors: document.querySelector('#display-errors').checked,
         display_jobs: document.querySelector('#display-jobs').checked,
@@ -424,7 +464,6 @@ window.onpopstate = function(event) {
 function update_user_inputs_from_state() {
     let state = window.history.state;
     document.getElementById(`nightly-${state.nightly}`).checked = true;
-    document.getElementById(`days-${state.days}`).checked = true;
     document.getElementById(`search`).value = state.search;
     document.getElementById(`display-errors`).checked = state.display_errors;
     document.getElementById(`display-jobs`).checked = state.display_jobs;
@@ -440,7 +479,7 @@ function update_results_from_state() {
 
 let table = document.getElementById('results-table');
 
-table.classList.add("loading");
+table.parentNode.classList.add("loading");
 
 Promise.all([
     fetch('combined_small.json'),
@@ -454,7 +493,7 @@ Promise.all([
         return response.json();
     }));
 }).then(function (data) {
-    table.classList.remove("loading");
+    table.parentNode.classList.remove("loading");
     projects = data[0];
     patterns_in_logs = data[1];
     if (!isSameDay(get_newest_pipeline_date(projects), Date.now())) {
@@ -462,7 +501,7 @@ Promise.all([
     }
     update_state_from_url();
 }).catch(function (error) {
-    table.classList.remove("loading");
+    table.parentNode.classList.remove("loading");
     show_error(`ERROR: ${error}`);
     throw error;
 });
