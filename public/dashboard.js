@@ -337,7 +337,11 @@ function render_dates_header(table, timeline_start) {
     let dates_header = table.createTHead();
     // Days row
     let days_row = dates_header.insertRow();
-    let dates = dates_since(timeline_start);
+    let dates_utc = dates_since(timeline_start);
+    // Show days as being the previous one.
+    // Nightly pipelines run at 8pm Winnipeg time, which is ~2am UTC,
+    // hence we subtract 1 day for display purposes
+    let dates = dates_utc.map(d => add_days(d, -1));
     let today = dates.pop();
     let first_date = true;
     for (let date of dates){
