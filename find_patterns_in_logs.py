@@ -7,23 +7,27 @@ import re
 import sys
 
 # Error patterns
-# The first matched group (in brackets) is what is shown to the user
+# The first capturing group (in brackets) is what is shown to the user
 patterns = [
     r'(Unsatisfiable requirements detected for package [^\s]+)',
     r'Got exception outside of a @test (.+?)\s+Stacktrace:',
     r'Test Failed at.*?Expression: (.*?)\s+Stacktrace:',
-    r'ERROR: (empty intersection between .* and project compatibility.*) Stacktrace:',
     r'ERROR:.*?(UndefVarError: .*? not defined)',
     r'ERROR:.*?Job failed: (execution took longer than .*?) seconds',
     r'(received signal: KILL)',
-    r'ERROR: (failed to clone from .+?), error: GitError\(Code:ERROR, Class:OS, failed to connect to .*?: Operation timed out\) Stacktrace:',
     r'ERROR: Requested .+? from .+? has (different version in metadata: \'.*?\')',
     r'FATAL: (password authentication failed for user ".+?")',
     r'(Backrun Failed)',
     r'(signal \(15\))',
+    r'(Segmentation fault)',
     r'deploy_stack:CREATE_FAILED.+?Error Code: (.+?);',
     r'An error occurred \(.+?\) when calling the .+? operation: ([ -~]+)', # Boto error # Note: `[ -~]` matches any ASCII character (this is to match until the next color code)
-    # r'ERROR:(.+)'
+    r'error: (command .+? failed with exit status 1)',
+]
+
+# Try the above patterns first, if no matches try the ones below (may be more verbose)
+backup_patterns = [
+    r'ERROR:(?: \[22m\[39m)?(?: LoadError:)? (.+?) Stacktrace:',
 ]
 
 
@@ -53,6 +57,22 @@ for f in glob.glob("responses/projects/*.json"):
 
 results = {}
 
+
+def find_pattern_occurences(pattern, text):
+    results = []
+    for match in re.finditer(pattern, text):
+        match_result = {
+            # "pattern": pattern,
+            # "matched_text": match.group(0),
+            "matched_group": match.group(1),
+            # "_log_url": f"https://gitlab.invenia.ca/{projects[project_id]['path_with_namespace']}/-/jobs/{job_id}"
+        }
+        results.append(match_result)
+        # print("MATCH", match_result)
+    return results
+
+
+
 for path in Path('responses').rglob('trace'):
 
     match = re.match(r'responses/projects/(\d+)/jobs/(\d+)/trace', str(path))
@@ -67,22 +87,21 @@ for path in Path('responses').rglob('trace'):
     with open(path, 'r') as f:
         text = f.read()
 
+        job_results = []
+        # First try normal patterns
         for pattern in patterns:
-            for match in re.finditer(pattern, text):
-                match_result = {
-                    # "pattern": pattern,
-                    # "matched_text": match.group(0),
-                    "matched_group": match.group(1),
-                    # "_log_url": f"https://gitlab.invenia.ca/{projects[project_id]['path_with_namespace']}/-/jobs/{job_id}"
-                }
+            job_results.extend(find_pattern_occurences(pattern, text))
+        # Then backup patterns
+        if len(job_results) == 0:
+            for pattern in backup_patterns:
+                job_results.extend(find_pattern_occurences(pattern, text))
 
-                if project_id not in results:
-                    results[project_id] = {}
-                if job_id not in results[project_id]:
-                    results[project_id][job_id] = []
-                results[project_id][job_id].append(match_result)
+        if len(job_results) > 0:
+            if project_id not in results:
+                results[project_id] = {}
+            results[project_id][job_id] = job_results
 
-        num_errors_found = len(results[project_id][job_id]) if project_id in results and job_id in results[project_id] else 0
+        num_errors_found = len(job_results)
         print(f"Found {num_errors_found} error(s) in {path}")
 
 output_file = 'public/patterns_in_logs.json'
