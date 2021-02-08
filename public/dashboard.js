@@ -221,7 +221,6 @@ function render_job(job, project) {
     let state = window.history.state;
     let search_filter = state.search;
     let all_patterns = patterns_in_logs[project.metadata.id] && patterns_in_logs[project.metadata.id][job.id] || [];
-    
     let patterns_deduplicated = remove_duplicates(all_patterns, ["matched_group"]); // remove addition patterns that have the same matched_group
     
 
@@ -268,7 +267,11 @@ function render_job(job, project) {
                 html += `</span>`;
                 html += `</li>`;
             } else {
-                for (let pattern of patterns_to_show) {
+                let patterns_normal = patterns_to_show.filter(p => p.pattern_type == "normal");
+                let patterns_backup = patterns_to_show.filter(p => p.pattern_type == "backup");
+                // Only show "backup" errors if there are no normal ones
+                let patterns_to_actually_show = (patterns_normal.length > 0) ? patterns_normal : patterns_backup;
+                for (let pattern of patterns_to_actually_show) {
                     // html += ` <span>(${patterns.length})</span> `;
                     html += `<li>`;
                     html += `<span class="tooltip error-message">`;
