@@ -21,15 +21,15 @@ patterns = [
     r'(signal \(15\))',
     r'(Segmentation fault)',
     r'deploy_stack:CREATE_FAILED.+?Error Code: (.+?);',
-    r'An error occurred \(.+?\) when calling the .+? operation: ([ -~]+)', # Boto error # Note: `[ -~]` matches any ASCII character (this is to match until the next color code)
-    r'error: (command .+? failed with exit status 1)',
-    r'(UndesiredFinalState: .+? entered the undesired final state .+?)', # cloudspy error
+    r'An error occurred ([ -~]+)', # Boto error # Note: `[ -~]` matches any ASCII character (this is to match until the next color code)
+    r'(UndesiredFinalState: .+? entered the undesired final state .+?) section_end', # cloudspy error
     r'Error response from daemon: (.+?) section_end', # aws ecr get-login
     r'(mv: cannot move .+? No such file or directory)',
 ]
 
 # Try the above patterns first, if no matches try the ones below (may be more verbose)
 backup_patterns = [
+    r'([Cc]ommand .+? failed with (exit status|error code) \d+)',
     r'ERROR:(?: \[22m\[39m)?(?: LoadError:)? (.+?) Stacktrace:',
 ]
 
