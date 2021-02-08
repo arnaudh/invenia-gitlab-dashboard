@@ -15,7 +15,7 @@ patterns = [
     r'ERROR:.*?(UndefVarError: .*? not defined)',
     r'ERROR:.*?Job failed: (execution took longer than .*?) seconds',
     r'(received signal: KILL)',
-    r'ERROR: Requested .+? from .+? has (different version in metadata: \'.*?\')',
+    r'ERROR: (Requested .+? from .+? has different version in metadata: \'.*?\')',
     r'FATAL: (password authentication failed for user ".+?")',
     r'(Backrun Failed)',
     r'(signal \(15\))',
@@ -23,6 +23,9 @@ patterns = [
     r'deploy_stack:CREATE_FAILED.+?Error Code: (.+?);',
     r'An error occurred \(.+?\) when calling the .+? operation: ([ -~]+)', # Boto error # Note: `[ -~]` matches any ASCII character (this is to match until the next color code)
     r'error: (command .+? failed with exit status 1)',
+    r'(UndesiredFinalState: .+? entered the undesired final state .+?)', # cloudspy error
+    r'Error response from daemon: (.+?) section_end', # aws ecr get-login
+    r'(mv: cannot move .+? No such file or directory)',
 ]
 
 # Try the above patterns first, if no matches try the ones below (may be more verbose)
@@ -58,12 +61,13 @@ for f in glob.glob("responses/projects/*.json"):
 results = {}
 
 
-def find_pattern_occurences(pattern, text):
+def find_pattern_occurences(pattern, text, pattern_type):
     results = []
     for match in re.finditer(pattern, text):
         match_result = {
             # "pattern": pattern,
             # "matched_text": match.group(0),
+            "pattern_type": pattern_type,
             "matched_group": match.group(1),
             # "_log_url": f"https://gitlab.invenia.ca/{projects[project_id]['path_with_namespace']}/-/jobs/{job_id}"
         }
@@ -90,11 +94,10 @@ for path in Path('responses').rglob('trace'):
         job_results = []
         # First try normal patterns
         for pattern in patterns:
-            job_results.extend(find_pattern_occurences(pattern, text))
+            job_results.extend(find_pattern_occurences(pattern, text, "normal"))
         # Then backup patterns
-        if len(job_results) == 0:
-            for pattern in backup_patterns:
-                job_results.extend(find_pattern_occurences(pattern, text))
+        for pattern in backup_patterns:
+            job_results.extend(find_pattern_occurences(pattern, text, "backup"))
 
         if len(job_results) > 0:
             if project_id not in results:
