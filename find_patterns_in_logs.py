@@ -27,9 +27,9 @@ patterns = [
     r'(mv: cannot move .+? No such file or directory)',
 ]
 
-# Try the above patterns first, if no matches try the ones below (may be more verbose)
+# Try the above patterns first, if no matches try the ones below (may be less informative or more verbose)
 backup_patterns = [
-    r'([Cc]ommand .+? failed with (exit status|error code) \d+)',
+    r'([Cc]ommand (".+?"|\'.+?\') failed with (exit status|error code) \d+)',
     r'ERROR:(?: \[22m\[39m)?(?: LoadError:)? (.+?) Stacktrace:',
 ]
 
