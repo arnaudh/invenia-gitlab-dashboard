@@ -57,7 +57,7 @@ download_project_list
 
 echo "Downloading projects"
 
-project_ids=($(jq -s '. | flatten | map(.id|tostring) | join(" ")' responses/projects/*.json -r))
+project_ids=($(jq -s '[. | flatten | .[] | select(.archived==false)] | map(.id|tostring) | join(" ")' responses/projects/*.json -r))
 # project_ids=(241 460 353 201 473 508 533 536) # (BidFiles.jl GLMForecasters.jl GPForecasters.jl S3DB.jl Backruns.jl Features.jl GLMModels.jl<rse> WrapperModels.jl<rse>)
 # project_ids=(473 508 533 536) # (Backruns.jl Features.jl GLMModels.jl<rse> WrapperModels.jl<rse>)
 
