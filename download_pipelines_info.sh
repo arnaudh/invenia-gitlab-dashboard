@@ -4,9 +4,9 @@
 set -eu -o pipefail
 
 # To run:
-#  1. Generate Gitlab Personal Access Token https://gitlab.invenia.ca/profile/personal_access_tokens (checking read_user, read_api, read_repository)
+#  1. Generate Gitlab Personal Access Token https://gitlab.invenia.ca/profile/personal_access_tokens (checking read_api)
 #  2. Run:
-#   export AWS_PROFILE=ci
+#   export GITLAB_ACCESS_TOKEN=<token>
 #   ./download_pipelines_info.sh
 
 MAX_N_PROJECTS=100000
@@ -15,9 +15,6 @@ echo "MAX_N_PROJECTS=$MAX_N_PROJECTS"
 echo "MAX_N_PIPELINES=$MAX_N_PIPELINES"
 
 mkdir -p responses/projects/
-
-echo "Getting Gitlab API access token from AWS SSM"
-GITLAB_ACCESS_TOKEN=$(aws ssm get-parameter --name gitlab-dashboard-access-token --with-decryption --query Parameter.Value --output text)
 
 curl_wrapper() {
     output=$(curl --silent "$@")
