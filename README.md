@@ -43,13 +43,15 @@ When the script is run as part of the gitlab-dashboard CI pipeline, it reads the
 
 ## Run locally
 
-1. Use the `ci` AWS profile (need to be CI admin); this is needed to have access to the GitLab API access token found in SSM in the CI account
+1. Generate a Gitlab [Personal Access Token](https://gitlab.invenia.ca/profile/personal_access_tokens), selecting the `read_api` scope
+
+2. Export it in your terminal
 
 ```
-export AWS_PROFILE=ci
+export GITLAB_ACCESS_TOKEN=<token>
 ```
 
-2. Download data from GitLab API
+3. Download data from GitLab API
 
 ```
 ./download_pipelines_info.sh
@@ -57,19 +59,19 @@ export AWS_PROFILE=ci
 
 This will store files under `responses/`, and will also generate `public/combined.json` which combines all the useful data into one file.
 
-3. Find error patterns in logs
+4. Find error patterns in logs
 
 ```
 ./find_patterns_in_logs.py
 ```
 
-4. Start a webserver to serve the `public/` directory
+5. Start a webserver to serve the `public/` directory
 
 ```
 python3 -m http.server --directory public
 ```
 
-5. Go to [http://localhost:8000/](http://localhost:8000/)
+6. Go to [http://localhost:8000/](http://localhost:8000/)
 
 Once running, you can make changes to any of the static files (js, html, css, json), and simply reload the page to see the changes.
 

@@ -4,7 +4,9 @@
 set -eu -o pipefail
 
 # To run:
-#  1. Generate Gitlab Personal Access Token https://gitlab.invenia.ca/profile/personal_access_tokens (checking read_api)
+#  1. Generate a Gitlab Personal Access Token
+#     (https://gitlab.invenia.ca/profile/personal_access_tokens)
+#     selecting the `read_api` scope
 #  2. Run:
 #   export GITLAB_ACCESS_TOKEN=<token>
 #   ./download_pipelines_info.sh
@@ -95,11 +97,11 @@ for i in "${!project_ids[@]}"; do
     jq -s '.|flatten' responses/projects/$project_id/pipelines/by_user/*/*.json -r >> $combined_json_file
 
     # pipeline status is one of: created, waiting_for_resource, preparing, pending, running, success, failed, canceled, skipped, manual, scheduled 
-    failed_pipeline_ids=$(jq -s '[. | flatten | .[] | select(.status=="failed") | .id | tostring] | join(" ")' responses/projects/$project_id/pipelines/by_user/*/*.json -r)
-    echo ',"failed_pipelines":{' >> $combined_json_file
+    pipeline_ids=$(jq -s '[. | flatten | .[] | .id | tostring] | join(" ")' responses/projects/$project_id/pipelines/by_user/*/*.json -r)
+    echo ',"pipeline_jobs":{' >> $combined_json_file
 
     first_iteration_inner_loop=true
-    for pipeline_id in ${failed_pipeline_ids[@]}; do
+    for pipeline_id in ${pipeline_ids[@]}; do
         # Hack to add commas between json array elements
         if [[ $first_iteration_inner_loop = true ]]; then first_iteration_inner_loop=false; else echo "," >> $combined_json_file; fi
 
@@ -110,6 +112,7 @@ for i in "${!project_ids[@]}"; do
         echo '"jobs":' >> $combined_json_file
         cat responses/projects/$project_id/pipelines/by_id/$pipeline_id/jobs.json >> $combined_json_file
 
+        # job status is one of: success, failed, skipped, canceled, manual (others?)
         failed_job_ids=$(jq -s '[. | flatten | .[] | select(.status=="failed") | .id | tostring] | join(" ")' responses/projects/$project_id/pipelines/by_id/$pipeline_id/jobs.json -r)
         for job_id in ${failed_job_ids[@]}; do
             mkdir -p responses/projects/$project_id/jobs/$job_id
@@ -118,7 +121,7 @@ for i in "${!project_ids[@]}"; do
 
         echo '}' >> $combined_json_file # pipeline_id
     done
-    echo '}' >> $combined_json_file # failed_pipelines
+    echo '}' >> $combined_json_file # pipeline_jobs
     echo '}' >> $combined_json_file # project
 done
 
@@ -127,6 +130,6 @@ echo ']' >> $combined_json_file # end of file
 echo "Wrote to $combined_json_file"
 
 # Selecting only fields which we'll use in the dashboard
-cat $combined_json_file | jq '[.[] | {metadata:{id:.metadata.id, name:.metadata.name, web_url:.metadata.web_url}, nightly_user: .nightly_user, pipelines: (.pipelines|map({id:.id, status:.status, web_url:.web_url, created_at:.created_at})), failed_pipelines:(.failed_pipelines|to_entries|map({key:.key, value:{jobs:.value.jobs|map({id:.id, name:.name, status:.status, web_url:.web_url})}})|from_entries)}]' -c > $combined_small_json_file
+cat $combined_json_file | jq '[.[] | {metadata:{id:.metadata.id, name:.metadata.name, web_url:.metadata.web_url}, nightly_user: .nightly_user, pipelines: (.pipelines|map({id:.id, status:.status, web_url:.web_url, created_at:.created_at})), pipeline_jobs:(.pipeline_jobs|to_entries|map({key:.key, value:{jobs:.value.jobs|map({id:.id, name:.name, status:.status, allow_failure:.allow_failure, web_url:.web_url})}})|from_entries)}]' -c > $combined_small_json_file
 
 echo "Wrote to $combined_small_json_file"
