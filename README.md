@@ -20,7 +20,6 @@ Issue triage:
 - list most prevalent errors, highlight errors not seen before
 - show commit hashes, package releases, dependency version changes (if that is possible?)
 - show related Gitlab issues. make it possible to easily assign a job failure to an issue
-- show pipelines that passed with warning; looks like RSEs want to know (e.g. https://gitlab.invenia.ca/invenia/research/GLMModels.jl/-/pipelines/112884)
 
 ## Setup
 

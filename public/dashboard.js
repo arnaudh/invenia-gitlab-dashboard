@@ -179,8 +179,8 @@ function render_pipeline(pipeline, project) {
             job.status == "failed" && job.allow_failure && state.display_jobs_failed_allow_failure ||
             job.status == "success" && state.display_jobs_passed ||
             !["success", "failed"].includes(job.status) && state.display_jobs_other;
-    })
-    if (jobs_to_show.length > 0 && state.display_job_names || state.display_errors) {
+    });
+    if (jobs_to_show.length > 0 && (state.display_job_names || state.display_errors)) {
         cellValue = `<table class="pipeline-jobs">`;
         cellValue += jobs_to_show.map(job => render_job(job, project)).join("");
         cellValue += `</table>`;
