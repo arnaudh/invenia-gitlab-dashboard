@@ -83,10 +83,18 @@ for i in "${!project_ids[@]}"; do
     curl_wrapper -H "Private-Token: $GITLAB_ACCESS_TOKEN" "https://gitlab.invenia.ca/api/v4/projects/$project_id" > responses/projects/$project_id/project.json
     echo '"metadata":' >> $combined_json_file
     cat responses/projects/$project_id/project.json >> $combined_json_file
+    project_name=$(jq '.name_with_namespace' responses/projects/$project_id/project.json -r)
+    web_url=$(jq '.web_url' responses/projects/$project_id/project.json -r)
+    echo " Project name: '$project_name' ($web_url)"
 
     for nightly_user in ${nightly_users[@]}; do
         mkdir -p responses/projects/$project_id/pipelines/by_user/$nightly_user
-        curl_wrapper -H "Private-Token: $GITLAB_ACCESS_TOKEN" "https://gitlab.invenia.ca/api/v4/projects/$project_id/pipelines?username=${nightly_user}&per_page=$MAX_N_PIPELINES" > responses/projects/$project_id/pipelines/by_user/$nightly_user/page_1.json
+        url="https://gitlab.invenia.ca/api/v4/projects/$project_id/pipelines?username=${nightly_user}&per_page=$MAX_N_PIPELINES"
+        curl_wrapper -H "Private-Token: $GITLAB_ACCESS_TOKEN" "$url" > responses/projects/$project_id/pipelines/by_user/$nightly_user/page_1.json
+        if [[ $(< responses/projects/$project_id/pipelines/by_user/$nightly_user/page_1.json) = '{"message":"403 Forbidden"}' ]]; then
+            echo '[]' > responses/projects/$project_id/pipelines/by_user/$nightly_user/page_1.json
+            echo " Got a 403 Forbidden for $url (this is likely ok, some repos don't allow access to CI)"
+        fi
         num_pipelines=$(jq 'length' responses/projects/$project_id/pipelines/by_user/$nightly_user/page_1.json)
         # echo $num_pipelines
         if [[ $num_pipelines -gt 0 ]]; then
