@@ -2,8 +2,12 @@
 const DEFAULTS = {
     "nightly": "all", // nightly user
     "search": "", // search filter
-    "display_jobs": true,
+    "display_job_names": true,
     "display_errors": true,
+    "display_jobs_failed": true,
+    "display_jobs_failed_allow_failure": false,
+    "display_jobs_passed": false,
+    "display_jobs_other": false,
 }
 
 // Would need to modify the download script to go further
@@ -169,22 +173,19 @@ function addCell(row, text_or_node, class_list=[]) {
 function render_pipeline(pipeline, project) {
     let state = window.history.state;
     let cellValue;
-    if (pipeline.status === "success") {
+    let jobs = project.pipeline_jobs[pipeline.id].jobs;
+    let jobs_to_show = jobs.filter(function(job) {
+        return job.status == "failed" && !job.allow_failure && state.display_jobs_failed ||
+            job.status == "failed" && job.allow_failure && state.display_jobs_failed_allow_failure ||
+            job.status == "success" && state.display_jobs_passed ||
+            !["success", "failed"].includes(job.status) && state.display_jobs_other;
+    });
+    if (jobs_to_show.length > 0 && (state.display_job_names || state.display_errors)) {
+        cellValue = `<table class="pipeline-jobs">`;
+        cellValue += jobs_to_show.map(job => render_job(job, project)).join("");
+        cellValue += `</table>`;
+    } else if (pipeline.status === "success") {
         cellValue = `<a href="${pipeline.web_url}"><span title="success">✓</span></a>`;
-    } else if (pipeline.status === "failed") {
-        if (state.display_jobs || state.display_errors) {
-            let jobs = project.failed_pipelines[pipeline.id].jobs;
-            let failed_jobs = jobs.filter(j => j.status === "failed");
-            if (failed_jobs.length > 0) {
-                cellValue = `<table class="pipeline-jobs">`;
-                cellValue += failed_jobs.map(job => render_job(job, project)).join("");
-                cellValue += `</table>`;
-            } else {
-                cellValue = `<a href="${pipeline.web_url}"><span title="${pipeline.status}">${pipeline.status}</span></a>`;
-            }
-        } else {
-            cellValue = `<a href="${pipeline.web_url}"><span title="${pipeline.status}">${pipeline.status}</span></a>`;
-        }
     } else {
         cellValue = `<a href="${pipeline.web_url}"><span title="${pipeline.status}">${pipeline.status}</span></a>`;
     }
@@ -217,6 +218,20 @@ function remove_duplicates(arr, key_fields) {
     );
 }
 
+function job_status_icon(job) {
+    if (job.status == "failed") {
+        if (job.allow_failure) {
+            return `<span class="gitlab-status"><img src="images/gitlab-warning.png" title="failed (allowed to fail)"/></span>`;
+        } else {
+            return `<span class="gitlab-status"><img src="images/gitlab-failed.png" title="failed"/></span>`;
+        }
+    } else if (job.status == "success") {
+        return `<span class="gitlab-status"><img src="images/gitlab-success.png" title="passed"/></span>`;
+    } else {
+        return `<span class="gitlab-status"><img src="images/gitlab-other.png" title="${job.status}"/></span>`;
+    }
+}
+
 function render_job(job, project) {
     let state = window.history.state;
     let search_filter = state.search;
@@ -245,13 +260,14 @@ function render_job(job, project) {
     if (show_job) {
         // html = `<table>`;
         html = `<tr>`;
-        if (state.display_jobs) {
+        if (state.display_job_names) {
             html += `<td class="job-name">`;
             html += `<span>`;
             html += `<span class="tooltip">`;
             html += `<a href="${job.web_url}" target="_blank" rel="noopener noreferrer">${shorten_job_name(job.name)}</a>`;
             // html += `<a href="${job.web_url}">${job.name}</a>`;
             html += `<span><span class="tooltiptext left">${job.name}</span></span>`;
+            html += job_status_icon(job);
             html += `</span>`;
             html += `</span>`;
             html += `</td>`;
@@ -259,7 +275,7 @@ function render_job(job, project) {
         if (state.display_errors) {
             html += `<td class="error-messages">`;
             html += `<ul>`;
-            if (all_patterns.length === 0) {
+            if (all_patterns.length === 0 && job.status == "failed") {
                 html += `<li>`;
                 html += `<span class="tooltip dashboard-error-message">`;
                 html += `?`
@@ -438,7 +454,11 @@ function update_state_from_url() {
         "nightly": search_params.get('nightly') || DEFAULTS['nightly'],
         "search": search_params.get('search') || DEFAULTS['search'],
         "display_errors": parse_boolean(search_params.get('display_errors'), DEFAULTS['display_errors']),
-        "display_jobs": parse_boolean(search_params.get('display_jobs'), DEFAULTS['display_jobs']),
+        "display_job_names": parse_boolean(search_params.get('display_job_names'), DEFAULTS['display_job_names']),
+        "display_jobs_failed": parse_boolean(search_params.get('display_jobs_failed'), DEFAULTS['display_jobs_failed']),
+        "display_jobs_failed_allow_failure": parse_boolean(search_params.get('display_jobs_failed_allow_failure'), DEFAULTS['display_jobs_failed_allow_failure']),
+        "display_jobs_passed": parse_boolean(search_params.get('display_jobs_passed'), DEFAULTS['display_jobs_passed']),
+        "display_jobs_other": parse_boolean(search_params.get('display_jobs_other'), DEFAULTS['display_jobs_other']),
     };
     console.log('state', state);
     let res = window.history.replaceState(state, "", state_to_search_string(state));
@@ -451,13 +471,18 @@ function update_state_from_user_inputs() {
         nightly: document.querySelector('input[name="nightly"]:checked').value,
         search: document.querySelector('#search').value,
         display_errors: document.querySelector('#display-errors').checked,
-        display_jobs: document.querySelector('#display-jobs').checked,
+        display_job_names: document.querySelector('#display-job-names').checked,
+        display_jobs_failed: document.querySelector('#display-jobs-failed').checked,
+        display_jobs_failed_allow_failure: document.querySelector('#display-jobs-failed-allow-failure').checked,
+        display_jobs_passed: document.querySelector('#display-jobs-passed').checked,
+        display_jobs_other: document.querySelector('#display-jobs-other').checked,
     }
     console.log('state', state);
     window.history.pushState(state, "", state_to_search_string(state));
     update_results_from_state();
 }
 
+// When the back button is used
 window.onpopstate = function(event) {
     console.log('state', window.history.state);
     update_user_inputs_from_state();
@@ -469,7 +494,11 @@ function update_user_inputs_from_state() {
     document.getElementById(`nightly-${state.nightly}`).checked = true;
     document.getElementById(`search`).value = state.search;
     document.getElementById(`display-errors`).checked = state.display_errors;
-    document.getElementById(`display-jobs`).checked = state.display_jobs;
+    document.getElementById(`display-job-names`).checked = state.display_job_names;
+    document.getElementById(`display-jobs-failed`).checked = state.display_jobs_failed;
+    document.getElementById(`display-jobs-failed-allow-failure`).checked = state.display_jobs_failed_allow_failure;
+    document.getElementById(`display-jobs-passed`).checked = state.display_jobs_passed;
+    document.getElementById(`display-jobs-other`).checked = state.display_jobs_other;
 }
 
 function update_results_from_state() {

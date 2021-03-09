@@ -339,6 +339,15 @@ table .dashboard-error-message a {
 }
 
 
+/* Gitlab status icons */
+#toolbar .gitlab-status img {
+  width: 15px;
+}
+table .gitlab-status img {
+  margin: 0 0 -2px 2px;
+  width: 12px;
+}
+
 /* Fix emoji spacing when connecting a non-retina screen */
 /* https://stackoverflow.com/a/44145771/533591 */
 @media

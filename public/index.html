@@ -32,12 +32,38 @@
     </span>
     <span class="form-line">Display:
         <span>
-            <input type="checkbox" id="display-jobs" name="display-jobs" value="jobs" onchange="update_state_from_user_inputs()">
-            <label for="display-jobs">job names</label>
+            <input type="checkbox" id="display-job-names" name="display-job-names" onchange="update_state_from_user_inputs()">
+            <label for="display-job-names">job names</label>
         </span>
         <span>
-            <input type="checkbox" id="display-errors" name="display-errors" value="errors" onchange="update_state_from_user_inputs()">
+            <input type="checkbox" id="display-errors" name="display-errors" onchange="update_state_from_user_inputs()">
             <label for="display-errors">error messages</label>
+        </span>
+    </span>
+    <span class="form-line">| Job status:
+        <span>
+            <input type="checkbox" id="display-jobs-failed" name="display-jobs-failed" onchange="update_state_from_user_inputs()">
+            <label for="display-jobs-failed">
+                <span class="gitlab-status"><img src="images/gitlab-failed.png" title="failed"/></span>
+            </label>
+        </span>
+        <span>
+            <input type="checkbox" id="display-jobs-failed-allow-failure" name="display-jobs-failed-allow-failure" onchange="update_state_from_user_inputs()">
+            <label for="display-jobs-failed-allow-failure">
+                <span class="gitlab-status"><img src="images/gitlab-warning.png" title="failed (allowed to fail)"/></span>
+            </label>
+        </span>
+        <span>
+            <input type="checkbox" id="display-jobs-passed" name="display-jobs-passed" onchange="update_state_from_user_inputs()">
+            <label for="display-jobs-passed">
+                <span class="gitlab-status"><img src="images/gitlab-success.png" title="passed"/></span>
+            </label>
+        </span>
+        <span>
+            <input type="checkbox" id="display-jobs-other" name="display-jobs-other" onchange="update_state_from_user_inputs()">
+            <label for="display-jobs-other">
+                <span class="gitlab-status"><img src="images/gitlab-other.png" title="other"/></span>
+            </label>
         </span>
     </span>
 </div>
