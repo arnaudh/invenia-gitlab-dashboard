@@ -39,7 +39,8 @@ curl_wrapper() {
 
 download_project_list() {
     echo "Downloading project list"
-    curl_wrapper --dump-header responses/projects/head -H "Private-Token: $GITLAB_ACCESS_TOKEN" "https://gitlab.invenia.ca/api/v4/projects?per_page=100" > /dev/null
+    project_query="https://gitlab.invenia.ca/api/v4/groups/invenia/projects?archived=false&include_subgroups=true&per_page=100"
+    curl_wrapper --dump-header responses/projects/head -H "Private-Token: $GITLAB_ACCESS_TOKEN" "$project_query" > /dev/null
 
     # n_projects=$(cat responses/projects/head | grep X-Total: | sed 's/[^0-9]*//g')
     n_pages=$(cat responses/projects/head | grep X-Total-Pages: | sed 's/[^0-9]*//g')
@@ -47,7 +48,7 @@ download_project_list() {
 
     for (( page = 1; page <= $n_pages; page++ )); do
         echo "page $page"
-        curl_wrapper -H "Private-Token: $GITLAB_ACCESS_TOKEN" "https://gitlab.invenia.ca/api/v4/projects?per_page=100&page=$page" > responses/projects/page_$page.json
+        curl_wrapper -H "Private-Token: $GITLAB_ACCESS_TOKEN" "$project_query&page=$page" > responses/projects/page_$page.json
     done
     # jq -s '.|flatten|length' responses/projects/*.json
 }
