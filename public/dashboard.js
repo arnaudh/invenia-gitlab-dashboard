@@ -28,6 +28,7 @@ const ERROR_STRING_DISPLAY_LIMIT = 10;
 
 let projects;
 let patterns_in_logs;
+let last_updated;
 
 //=================================
 //      Utility functions
@@ -139,6 +140,32 @@ function show_error(str) {
     let error_div = document.getElementById('error-message');
     error_div.innerHTML = str;
     error_div.style.display = 'block';
+}
+
+function time_since(date) {
+    // https://stackoverflow.com/a/3177838/533591
+    var seconds = Math.floor((new Date() - date) / 1000);
+    var interval = seconds / 31536000;
+    if (interval > 1) {
+        return Math.floor(interval) + " yr";
+    }
+    interval = seconds / 2592000;
+    if (interval > 1) {
+        return Math.floor(interval) + " mth";
+    }
+    interval = seconds / 86400;
+    if (interval > 1) {
+        return Math.floor(interval) + " d";
+    }
+    interval = seconds / 3600;
+    if (interval > 1) {
+        return Math.floor(interval) + " h";
+    }
+    interval = seconds / 60;
+    if (interval > 1) {
+        return Math.floor(interval) + " min";
+    }
+    return Math.floor(seconds) + " s";
 }
 
 //=================================
@@ -373,7 +400,11 @@ function render_dates_header(table, timeline_start) {
     }
     month_prefix = today.toLocaleString('default', { month: 'short' });
     addTH(days_row, `${month_prefix} ${today.getDate()} (last night)`, class_list=["today"]);
-    addTH(days_row, "");
+    addTH(days_row, `
+        <span class="tooltip">updated ${time_since(last_updated)} ago
+            <span><span class="tooltiptext left">${last_updated.toISOString()}</span></span>
+        </span>
+    `);
 }
 
 function render_project_pipelines() {
@@ -515,7 +546,8 @@ table.parentNode.classList.add("loading");
 
 Promise.all([
     fetch('combined_small.json'),
-    fetch('patterns_in_logs.json')
+    fetch('patterns_in_logs.json'),
+    fetch('last_updated.json'),
 ]).then(function (responses) {
     if (responses.some(r => r.status !== 200)) {
         throw 'fetching json failed (see dev console).';
@@ -528,6 +560,7 @@ Promise.all([
     table.parentNode.classList.remove("loading");
     projects = data[0];
     patterns_in_logs = data[1];
+    last_updated = new Date(data[2]);
     if (!isSameDay(get_newest_pipeline_date(projects), Date.now())) {
         show_error(`WARNING: pipelines for the most recent day(s) are missing. This is likely due to a dashboard build failure (see <a href="https://gitlab.invenia.ca/invenia/gitlab-dashboard/-/pipelines">here</a>).`);
     }

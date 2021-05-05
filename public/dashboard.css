@@ -161,6 +161,9 @@ table a:visited {
 #results-table thead tr {
     text-align: left;
 }
+#results-table thead th:last-of-type {
+  color: #aaa;
+}
 #results-table thead th {
     background-color: #7d7dab;
     font-weight: lighter;
