@@ -140,8 +140,10 @@ echo "Wrote to $combined_json_file"
 
 # Selecting only fields which we'll use in the dashboard
 cat $combined_json_file | jq '[.[] | {metadata:{id:.metadata.id, name:.metadata.name, web_url:.metadata.web_url}, nightly_user: .nightly_user, pipelines: (.pipelines|map({id:.id, status:.status, web_url:.web_url, created_at:.created_at})), pipeline_jobs:(.pipeline_jobs|to_entries|map({key:.key, value:{jobs:.value.jobs|map({id:.id, name:.name, status:.status, allow_failure:.allow_failure, web_url:.web_url})}})|from_entries)}]' -c > $combined_small_json_file
-
 echo "Wrote to $combined_small_json_file"
+
+rm $combined_json_file
+echo "Deleted $combined_json_file to reduce GitLab artifact size"
 
 date -u +"\"%Y-%m-%dT%H:%M:%SZ\"" > public/last_updated.json
 

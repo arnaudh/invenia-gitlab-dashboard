@@ -56,7 +56,7 @@ export GITLAB_ACCESS_TOKEN=<token>
 ./download_pipelines_info.sh
 ```
 
-This will store files under `responses/`, and will also generate `public/combined.json` which combines all the useful data into one file.
+This will store files under `responses/`, and will also generate `public/combined_small.json` which combines all the useful data into one file.
 
 4. Find error patterns in logs
 
