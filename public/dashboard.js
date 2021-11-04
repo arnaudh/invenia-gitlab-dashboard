@@ -4,13 +4,14 @@ const DEFAULTS = {
     "search": "", // search filter
     "display_job_names": true,
     "display_errors": true,
+    "display_dependencies": false,
     "display_jobs_failed": true,
     "display_jobs_failed_allow_failure": false,
     "display_jobs_passed": false,
     "display_jobs_other": false,
 }
 
-// Would need to modify the download script to go further
+// Would need to modify the download script to go further back
 DAYS_AGO=29;
 
 const USERS_INFO = {
@@ -27,7 +28,8 @@ const JOB_STRING_DISPLAY_LIMIT = 1000;
 const ERROR_STRING_DISPLAY_LIMIT = 10;
 
 let projects;
-let patterns_in_logs;
+let projects_dict;
+let extracted_info;
 let last_updated;
 
 //=================================
@@ -197,7 +199,17 @@ function addCell(row, text_or_node, class_list=[]) {
     }
 }
 
-function render_pipeline(pipeline, project) {
+function pipeline_job_by_name(pipeline, job_name, project) {
+    let jobs = pipeline && project.pipeline_jobs[pipeline.id].jobs.filter(j => j.name == job_name) || [];
+    if (jobs.length > 1) {
+        console.error("Multiple jobs in the pipeline with same name?? jobs=", project.pipeline_jobs[pipeline.id].jobs);
+        return null;
+    } else {
+        return jobs[0];
+    }
+}
+
+function render_pipeline(pipeline, previous_pipeline, project) {
     let state = window.history.state;
     let cellValue;
     let jobs = project.pipeline_jobs[pipeline.id].jobs;
@@ -207,9 +219,12 @@ function render_pipeline(pipeline, project) {
             job.status == "success" && state.display_jobs_passed ||
             !["success", "failed"].includes(job.status) && state.display_jobs_other;
     });
-    if (jobs_to_show.length > 0 && (state.display_job_names || state.display_errors)) {
+    if (jobs_to_show.length > 0 && (state.display_job_names || state.display_errors || state.display_dependencies)) {
         cellValue = `<table class="pipeline-jobs">`;
-        cellValue += jobs_to_show.map(job => render_job(job, project)).join("");
+        cellValue += jobs_to_show.map(function(job) {
+            let previous_pipeline_job = pipeline_job_by_name(previous_pipeline, job.name, project);
+            return render_job(job, previous_pipeline_job, project)
+        }).join("");
         cellValue += `</table>`;
     } else if (pipeline.status === "success") {
         cellValue = `<a href="${pipeline.web_url}"><span title="success">✓</span></a>`;
@@ -259,12 +274,146 @@ function job_status_icon(job) {
     }
 }
 
-function render_job(job, project) {
+function dependencies_diff(old_list, new_list) {
+    if (old_list.length === 0 || new_list.length === 0) {
+        return null;
+    }
+    old_dict = Object.assign({}, ...old_list.map(x => ({[x.name]: x})));
+    new_dict = Object.assign({}, ...new_list.map(x => ({[x.name]: x})));
+    diffs = [];
+    for (old of old_list){
+        if (old.name in new_dict) {
+            if (old.version !== new_dict[old.name].version) {
+                diffs.push({
+                    "name":old.name,
+                    "type":"edit",
+                    "old_version":old.version,
+                    "new_version":new_dict[old.name].version,
+                });
+            }
+        } else {
+            diffs.push({
+                "name":old.name,
+                "type":"delete",
+                "new_version":old.version,
+            });
+        }
+    }
+    for (new_item of new_list){
+        if (!(new_item.name in old_dict)) {
+            diffs.push({
+                "name":new_item.name,
+                "type":"add",
+                "new_version":new_item.version,
+            });
+        }
+    }
+    diffs_sorted = diffs.sort((a, b) => a.name < b.name);
+    return diffs_sorted;
+}
+
+// Test for dependencies_diff
+//                 same version               new version               removed + added dep
+    let old_list = [{"name":"A","version":1}, {"name":"B","version":1}, {"name":"C","version":1}];
+    let new_list = [{"name":"A","version":1}, {"name":"B","version":2}, {"name":"D","version":1}];
+    let expected_result = [
+        {"name":"B","type":"edit","old_version":1,"new_version":2},
+        {"name":"C","type":"delete","old_version":1},
+        {"name":"D","type":"add","new_version":1},
+    ];
+    actual_result = dependencies_diff(old_list, new_list);
+    // console.log("actual_result", actual_result);
+    // console.log("expected_result", expected_result);
+    console.assert(JSON.stringify(actual_result) == JSON.stringify(expected_result), "test for dependencies_diff failed");
+// end test
+
+
+function render_dependencies_diff_short(dep_diff) {
+    let num = dep_diff === null ? "?" : dep_diff.length;
+    return `∴${num}`;
+}
+
+function render_dependencies_diff_pretty(dep_diff) {
+    let message = "";
+    if (dep_diff === null) {
+        message = "?";
+    } else {
+        diff_strings = dep_diff.map(function (obj) {
+            let s;
+            uppercase_letters = obj.name.match(/([A-Z])/g) || [obj.name[0]];
+            let short_name = uppercase_letters.join("");
+            if (obj.type === "edit") {
+                s = `<td class="dependency-name">${short_name}</td><td class="dependency-version">${obj.new_version}</td>`;
+            } else if (obj.type === "delete") {
+                s = `<td class="dependency-name">-${short_name}</td><td class="dependency-version"></td>`;
+            } else if (obj.type === "add") {
+                s = `<td class="dependency-name">+${short_name}</td><td class="dependency-version">${obj.new_version}</td>`;
+            } else {
+                throw `unknown diff type ${obj.type}`;
+            };
+            return `<tr>${s}</tr>`;
+        });
+        message = `<table>` + diff_strings.join("") + `</table>`;
+    }
+    return message;
+}
+
+function render_dependency_change(package_name, old_version, new_version) {
+    let name_prefix = "";
+    if (old_version && !new_version) {
+        name_prefix = "-";
+    } else if (!old_version && new_version) {
+        name_prefix = "+";
+    }
+    let old_version_html = old_version || "";
+    let new_version_html = "";
+    if (new_version) {
+        if (projects_dict[package_name+".jl"]) {
+            let release_url = `${projects_dict[package_name+".jl"].metadata.web_url}/-/releases/${new_version}`;
+            new_version_html = `<a href="${release_url}" target="_blank">${new_version}</a>`;
+            if (old_version) {
+                let compare_url = `${projects_dict[package_name+".jl"].metadata.web_url}/-/compare/${old_version}...${new_version}`;
+                new_version_html = `<a href="${compare_url}" target="_blank">-></a> ` + new_version_html;
+            }
+        } else {
+            new_version_html = old_version ? `-> ${new_version}` : new_version;
+        }
+    }
+    if (package_name === "InlineStrings") {
+        console.log(package_name, old_version, new_version, `<td class="dependency-name">${name_prefix}${package_name}</td><td class="dependency-version">${old_version_html}</td><td class="dependency-version">${new_version_html}</td>`);
+    }
+
+    return `<td class="dependency-name">${name_prefix}${package_name}</td><td class="dependency-version">${old_version_html}</td><td class="dependency-version">${new_version_html}</td>`;
+}
+
+function render_dependencies_diff_full(dep_diff) {
+    let message = "";
+    if (dep_diff === null) {
+        // message = "?";
+        message = "<i>This job and/or the one from the previous day doesn't have a dependencies list.</i>";
+    } else {
+        if (dep_diff.length === 0) {
+            message = `<i>None.</i>`;
+        } else {
+            message = `<div class="dependencies-full">`;
+            diff_strings = dep_diff.map(function (obj) {
+                return `<tr>${render_dependency_change(obj.name, obj.old_version, obj.new_version)}</tr>`;
+            });
+            message += `<table>` + diff_strings.join("") + `</table>`;
+            message += `</div>`;
+        }
+    }
+    return message;
+}
+
+
+function render_job(job, previous_job, project) {
     let state = window.history.state;
     let search_filter = state.search;
-    let all_patterns = patterns_in_logs[project.metadata.id] && patterns_in_logs[project.metadata.id][job.id] || [];
+    let all_patterns = extracted_info[project.metadata.id] && extracted_info[project.metadata.id][job.id] && extracted_info[project.metadata.id][job.id]["error_messages"] || [];
     let patterns_deduplicated = remove_duplicates(all_patterns, ["matched_group"]); // remove addition patterns that have the same matched_group
-    
+    let dependencies = extracted_info[project.metadata.id] && extracted_info[project.metadata.id][job.id] && extracted_info[project.metadata.id][job.id]["dependencies"] || [];
+    let dependencies_previous_job = previous_job && extracted_info[project.metadata.id] && extracted_info[project.metadata.id][previous_job.id] && extracted_info[project.metadata.id][previous_job.id]["dependencies"] || [];
 
     let show_job;
     let patterns_to_show;
@@ -282,18 +431,40 @@ function render_job(job, project) {
             patterns_to_show = patterns_deduplicated;
         }
     }
+    let patterns_normal = patterns_to_show.filter(p => p.pattern_type == "normal");
+    let patterns_backup = patterns_to_show.filter(p => p.pattern_type == "backup");
+    let patterns_to_actually_show = (patterns_normal.length > 0) ? patterns_normal : patterns_backup;
 
     let html;
     if (show_job) {
-        // html = `<table>`;
         html = `<tr>`;
         if (state.display_job_names) {
             html += `<td class="job-name">`;
             html += `<span>`;
             html += `<span class="tooltip">`;
             html += `<a href="${job.web_url}" target="_blank" rel="noopener noreferrer">${shorten_job_name(job.name)}</a>`;
-            // html += `<a href="${job.web_url}">${job.name}</a>`;
-            html += `<span><span class="tooltiptext left">${job.name}</span></span>`;
+            
+            // Tooltip
+            html += `<span><span class="tooltiptext right">`;
+            html += job.name;
+            html += `<h3>Error messages detected:</h3>`;
+            // Only show "backup" errors if there are no normal ones
+            if (patterns_to_actually_show.length === 0) {
+                html += `<i>No known error pattern was found. You can add patterns <a href="https://gitlab.invenia.ca/invenia/gitlab-dashboard/-/blob/master/find_patterns_in_logs.py" target="_blank">here</a>.</i>`;
+            } else {
+                html += `<ul>`;
+                for (let pattern of patterns_to_actually_show) {
+                    html += `<li>`;
+                    html += `<div class="error-message">${pattern.matched_group}</div>`;
+                    html += `</li>`;
+                }
+                html += `</ul>`;
+            }
+            html += `<h3>Dependency changes:</h3>`;
+            let dep_diff = dependencies_diff(dependencies_previous_job, dependencies);
+            html += render_dependencies_diff_full(dep_diff);
+            html += `</span></span>`;
+
             html += job_status_icon(job);
             html += `</span>`;
             html += `</span>`;
@@ -306,29 +477,35 @@ function render_job(job, project) {
                 html += `<li>`;
                 html += `<span class="tooltip dashboard-error-message">`;
                 html += `?`
-                html += `<span><span class="tooltiptext center dashboard-error-message">No known error pattern was found. You can add patterns <a href="https://gitlab.invenia.ca/invenia/gitlab-dashboard/-/blob/master/find_patterns_in_logs.py">here</a></span></span>`;
                 html += `</span>`;
                 html += `</li>`;
             } else {
-                let patterns_normal = patterns_to_show.filter(p => p.pattern_type == "normal");
-                let patterns_backup = patterns_to_show.filter(p => p.pattern_type == "backup");
                 // Only show "backup" errors if there are no normal ones
                 let patterns_to_actually_show = (patterns_normal.length > 0) ? patterns_normal : patterns_backup;
                 for (let pattern of patterns_to_actually_show) {
-                    // html += ` <span>(${patterns.length})</span> `;
                     html += `<li>`;
                     html += `<span class="tooltip error-message">`;
                     html += limit_string(pattern.matched_group, length=ERROR_STRING_DISPLAY_LIMIT);
-                    html += `<span><span class="tooltiptext center error-message">${pattern.matched_group}</span></span>`;
                     html += `</span>`;
                     html += `</li>`;
                 }
             }
+            html += `</ul>`;
+            html += `</td>`;
         }
-        html += `</ul>`;
-        html += `</td>`;
+        if (state.display_dependencies) {
+            html += `<td class="dependencies">`;
+            if (previous_job) {
+                let dep_diff = dependencies_diff(dependencies_previous_job, dependencies);
+                html += `<div class="tooltip">`;
+                // html += `<span class="dependencies-short">${render_dependencies_diff_short(dep_diff)}</span>`;
+                html += `<div class="dependencies-short">${render_dependencies_diff_pretty(dep_diff)}</div>`;
+                // html += `<div class="dependencies-short">${render_dependencies_diff_full(dep_diff)}</div>`;
+                html += `</div>`;
+            }
+            html += `</td>`;
+        }
         html += `</tr>`;
-        // html += `</table>`;
     } else {
         html = '';
     }
@@ -424,7 +601,10 @@ function render_project_pipelines() {
     let table_body = document.createElement('tbody');
     table.appendChild(table_body);
     for (let project of projects_sorted) {
-        // if (project.metadata.id !== 207) continue;
+        // if (project.metadata.id !== 494) continue;
+        // if (project.metadata.id !== 542) continue; // PortfolioStrategies
+        // if (project.metadata.id !== 473) continue; // Backruns
+        // if (project.metadata.id !== 391) continue;
         if (!has_pipelines_after_date(project, timeline_start)) {
             continue;
         }
@@ -436,17 +616,22 @@ function render_project_pipelines() {
 
         // add table row
         let dates = dates_since(timeline_start);
+        let pipeline_previous_day = null;
         for (date of dates){
             let pipelines = get_pipelines_for_date(project, date);
             let cellValue = '';
             if (pipelines.length == 0) {
                 cellValue = '<em title="no pipeline">-</em>';
+                pipeline_previous_day = null;
             } else if (pipelines.length > 1) {
+                // TODO support deps diff for multiple pipelines
                 cellValue = '<em>multiple<br>pipelines</em>';
-                cellValue = pipelines.map(pipeline => render_pipeline(pipeline, project)).join('<br>');
+                cellValue = pipelines.map(pipeline => render_pipeline(pipeline, undefined, project)).join('<br>');
+                pipeline_previous_day = null;
             } else {
                 let pipeline = pipelines[0];
-                cellValue = render_pipeline(pipeline, project);
+                cellValue = render_pipeline(pipeline, pipeline_previous_day, project);
+                pipeline_previous_day = pipeline;
             }
             let class_list = (date === dates[dates.length-1]) ? ["today"] : [];
             addCell(row, cellValue, class_list);
@@ -485,6 +670,7 @@ function update_state_from_url() {
         "nightly": search_params.get('nightly') || DEFAULTS['nightly'],
         "search": search_params.get('search') || DEFAULTS['search'],
         "display_errors": parse_boolean(search_params.get('display_errors'), DEFAULTS['display_errors']),
+        "display_dependencies": parse_boolean(search_params.get('display_dependencies'), DEFAULTS['display_dependencies']),
         "display_job_names": parse_boolean(search_params.get('display_job_names'), DEFAULTS['display_job_names']),
         "display_jobs_failed": parse_boolean(search_params.get('display_jobs_failed'), DEFAULTS['display_jobs_failed']),
         "display_jobs_failed_allow_failure": parse_boolean(search_params.get('display_jobs_failed_allow_failure'), DEFAULTS['display_jobs_failed_allow_failure']),
@@ -502,6 +688,7 @@ function update_state_from_user_inputs() {
         nightly: document.querySelector('input[name="nightly"]:checked').value,
         search: document.querySelector('#search').value,
         display_errors: document.querySelector('#display-errors').checked,
+        display_dependencies: document.querySelector('#display-dependencies').checked,
         display_job_names: document.querySelector('#display-job-names').checked,
         display_jobs_failed: document.querySelector('#display-jobs-failed').checked,
         display_jobs_failed_allow_failure: document.querySelector('#display-jobs-failed-allow-failure').checked,
@@ -525,6 +712,7 @@ function update_user_inputs_from_state() {
     document.getElementById(`nightly-${state.nightly}`).checked = true;
     document.getElementById(`search`).value = state.search;
     document.getElementById(`display-errors`).checked = state.display_errors;
+    document.getElementById(`display-dependencies`).checked = state.display_dependencies;
     document.getElementById(`display-job-names`).checked = state.display_job_names;
     document.getElementById(`display-jobs-failed`).checked = state.display_jobs_failed;
     document.getElementById(`display-jobs-failed-allow-failure`).checked = state.display_jobs_failed_allow_failure;
@@ -546,7 +734,7 @@ table.parentNode.classList.add("loading");
 
 Promise.all([
     fetch('combined_small.json'),
-    fetch('patterns_in_logs.json'),
+    fetch('extracted_info.json'),
     fetch('last_updated.json'),
 ]).then(function (responses) {
     if (responses.some(r => r.status !== 200)) {
@@ -559,7 +747,8 @@ Promise.all([
 }).then(function (data) {
     table.parentNode.classList.remove("loading");
     projects = data[0];
-    patterns_in_logs = data[1];
+    projects_dict = Object.assign({}, ...projects.map(p => ({[p.metadata.name]: p})));
+    extracted_info = data[1];
     last_updated = new Date(data[2]);
     if (!isSameDay(get_newest_pipeline_date(projects), Date.now())) {
         show_error(`WARNING: pipelines for the most recent day(s) are missing. This is likely due to a dashboard build failure (see <a href="https://gitlab.invenia.ca/invenia/gitlab-dashboard/-/pipelines">here</a>).`);

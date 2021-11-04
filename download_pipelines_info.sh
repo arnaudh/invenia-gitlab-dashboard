@@ -2,6 +2,8 @@
 
 # set -x
 set -eu -o pipefail
+bash --version
+jq --version
 
 # To run:
 #  1. Generate a Gitlab Personal Access Token
@@ -106,9 +108,18 @@ for i in "${!project_ids[@]}"; do
     jq -s '.|flatten' responses/projects/$project_id/pipelines/by_user/*/*.json -r >> $combined_json_file
 
     # pipeline status is one of: created, waiting_for_resource, preparing, pending, running, success, failed, canceled, skipped, manual, scheduled 
-    pipeline_ids=$(jq -s '[. | flatten | .[] | .id | tostring] | join(" ")' responses/projects/$project_id/pipelines/by_user/*/*.json -r)
+    pipeline_ids=$(jq -s '[. | flatten | .[]] | sort_by(.created_at) | [.[].id | tostring] | join(" ")' responses/projects/$project_id/pipelines/by_user/*/*.json -r)
     echo ',"pipeline_jobs":{' >> $combined_json_file
 
+    echo "pipeline_ids: [$pipeline_ids]"
+    if [[ -z "$pipeline_ids" ]]; then
+        echo "WARN: no pipelines for project_id=$project_id"
+        echo '}' >> $combined_json_file # pipeline_jobs
+        echo '}' >> $combined_json_file # project
+        continue
+    fi
+
+    pipeline_ids=($pipeline_ids) # to array
     first_iteration_inner_loop=true
     for pipeline_id in ${pipeline_ids[@]}; do
         # Hack to add commas between json array elements
@@ -122,16 +133,63 @@ for i in "${!project_ids[@]}"; do
         cat responses/projects/$project_id/pipelines/by_id/$pipeline_id/jobs.json >> $combined_json_file
 
         # job status is one of: success, failed, skipped, canceled, manual (others?)
-        failed_job_ids=$(jq -s '[. | flatten | .[] | select(.status=="failed") | .id | tostring] | join(" ")' responses/projects/$project_id/pipelines/by_id/$pipeline_id/jobs.json -r)
-        for job_id in ${failed_job_ids[@]}; do
-            mkdir -p responses/projects/$project_id/jobs/$job_id
-            curl_wrapper -H "Private-Token: $GITLAB_ACCESS_TOKEN" "https://gitlab.invenia.ca/api/v4/projects/$project_id/jobs/$job_id/trace" > responses/projects/$project_id/jobs/$job_id/trace
-        done
+        # Save failed_job_names.json (for downlnoading job logs further down)
+        jq -s '[. | flatten | .[] | select(.status=="failed") | .name | tostring]' \
+            responses/projects/$project_id/pipelines/by_id/$pipeline_id/jobs.json -r \
+            > responses/projects/$project_id/pipelines/by_id/$pipeline_id/failed_job_names.json
 
         echo '}' >> $combined_json_file # pipeline_id
     done
+
     echo '}' >> $combined_json_file # pipeline_jobs
     echo '}' >> $combined_json_file # project
+
+    # Download job logs
+
+    # for pipeline_id in ${pipeline_ids[@]}; do
+    for i in ${!pipeline_ids[@]}; do
+        # echo pipeline $i
+        pipeline_id=${pipeline_ids[$i]}
+        # if [[ ! $pipeline_id = 156496 ]]; then continue; fi
+        echo "pipeline_ids ${pipeline_ids[@]}"
+        echo "pipeline i: $i"
+        echo "pipeline id: ${pipeline_ids[$i]} "
+        echo "length: ${#pipeline_ids[@]}"
+        # next_pipeline_id="${pipeline_ids[$((i+1))]}"
+        if (( $((i+1)) < ${#pipeline_ids[@]})); then
+            next_pipeline_id=${pipeline_ids[$((i+1))]}
+            echo "next_pipeline_id $next_pipeline_id"
+            failed_job_names_json=responses/projects/$project_id/pipelines/by_id/$next_pipeline_id/failed_job_names.json
+        else
+            echo "NO next_pipeline_id"
+            failed_job_names_json=responses/dummy_failed_job_names.json
+            echo "[]" > $failed_job_names_json
+        fi
+        # Download logs for jobs who either:
+        # 1. failed for the current pipeline
+        # 2. failed for the next day pipeline (based on matching job name). This is so we can do a dependency diff between the two jobs.
+        all_job_ids=$(\
+            jq --argfile failed_job_names $failed_job_names_json \
+            -s '[. | flatten | .[] | .id | tostring] | join(" ")' \
+            responses/projects/$project_id/pipelines/by_id/$pipeline_id/jobs.json -r\
+        )
+        echo "all_job_ids: $all_job_ids"
+        # note: defining `IN` because jq is only v1.5 on EC2 (1.6 has `IN`). https://stackoverflow.com/a/43269105/533591
+        job_ids_to_download=$(\
+            jq --argfile failed_job_names $failed_job_names_json \
+            -s 'def IN(s): first((s == .) // empty) // false; [. | flatten | .[] | select(.status=="failed" or (.name|IN($failed_job_names[]))) | .id | tostring] | join(" ")' \
+            responses/projects/$project_id/pipelines/by_id/$pipeline_id/jobs.json -r\
+        )
+        echo "job_ids_to_download: $job_ids_to_download"
+        # Run CURLs in background (using `&`), and then `wait` for all requests to complete after the for loop
+        for job_id in ${job_ids_to_download[@]}; do
+            mkdir -p responses/projects/$project_id/jobs/$job_id
+            echo "downloading job $job_id"
+            curl_wrapper -H "Private-Token: $GITLAB_ACCESS_TOKEN" "https://gitlab.invenia.ca/api/v4/projects/$project_id/jobs/$job_id/trace" > responses/projects/$project_id/jobs/$job_id/trace &
+        done
+        wait
+
+    done
 done
 
 echo ']' >> $combined_json_file # end of file
