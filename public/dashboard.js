@@ -295,7 +295,7 @@ function dependencies_diff(old_list, new_list) {
             diffs.push({
                 "name":old.name,
                 "type":"delete",
-                "new_version":old.version,
+                "old_version":old.version,
             });
         }
     }
