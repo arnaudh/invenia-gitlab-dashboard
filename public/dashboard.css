@@ -225,7 +225,7 @@ td.dependencies .dependencies-short {
   background-color: #DDD;
   /*color: #fff;*/
   /*color: #000;*/
-  border-radius: 5px;
+  border-radius: 2px;
   padding: 1px;
   /*margin-top: 10px;*/
   font-family: "Menlo", "DejaVu Sans Mono", "Liberation Mono", "Consolas", "Ubuntu Mono", "Courier New", "andale mono", "lucida console", monospace;
@@ -295,7 +295,7 @@ table th {
 
 .tooltiptext .dependencies-full {
   background-color: #DDD;
-  border-radius: 5px;
+  border-radius: 2px;
 }
 
 .tooltip .tooltiptext.error-message {
