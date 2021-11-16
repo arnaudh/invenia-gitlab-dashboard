@@ -34,12 +34,6 @@ h2 {
 }
 
 table a {
-    text-decoration: none;
-}
-table a:hover {
-   text-decoration:underline;
-}
-table a {
     color: #303030;
 }
 table a:visited {
