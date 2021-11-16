@@ -168,13 +168,7 @@ for i in "${!project_ids[@]}"; do
         # Download logs for jobs who either:
         # 1. failed for the current pipeline
         # 2. failed for the next day pipeline (based on matching job name). This is so we can do a dependency diff between the two jobs.
-        all_job_ids=$(\
-            jq --argfile failed_job_names $failed_job_names_json \
-            -s '[. | flatten | .[] | .id | tostring] | join(" ")' \
-            responses/projects/$project_id/pipelines/by_id/$pipeline_id/jobs.json -r\
-        )
-        echo "all_job_ids: $all_job_ids"
-        # note: defining `IN` because jq is only v1.5 on EC2 (1.6 has `IN`). https://stackoverflow.com/a/43269105/533591
+        # note: defining `IN` because jq is only v1.5 on EC2 (`IN` introduced in 1.6). https://stackoverflow.com/a/43269105/533591
         job_ids_to_download=$(\
             jq --argfile failed_job_names $failed_job_names_json \
             -s 'def IN(s): first((s == .) // empty) // false; [. | flatten | .[] | select(.status=="failed" or (.name|IN($failed_job_names[]))) | .id | tostring] | join(" ")' \
