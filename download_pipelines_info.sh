@@ -133,7 +133,7 @@ for i in "${!project_ids[@]}"; do
         cat responses/projects/$project_id/pipelines/by_id/$pipeline_id/jobs.json >> $combined_json_file
 
         # job status is one of: success, failed, skipped, canceled, manual (others?)
-        # Save failed_job_names.json (for downlnoading job logs further down)
+        # Save failed_job_names.json (for downloading job logs further down)
         jq -s '[. | flatten | .[] | select(.status=="failed") | .name | tostring]' \
             responses/projects/$project_id/pipelines/by_id/$pipeline_id/jobs.json -r \
             > responses/projects/$project_id/pipelines/by_id/$pipeline_id/failed_job_names.json

@@ -274,37 +274,37 @@ function job_status_icon(job) {
     }
 }
 
-function dependencies_diff(old_list, new_list) {
-    if (old_list.length === 0 || new_list.length === 0) {
+function dependencies_diff(old_packages, new_packages) {
+    if (old_packages.length === 0 || new_packages.length === 0) {
         return null;
     }
-    old_dict = Object.assign({}, ...old_list.map(x => ({[x.name]: x})));
-    new_dict = Object.assign({}, ...new_list.map(x => ({[x.name]: x})));
+    old_dict = Object.assign({}, ...old_packages.map(x => ({[x.name]: x})));
+    new_dict = Object.assign({}, ...new_packages.map(x => ({[x.name]: x})));
     diffs = [];
-    for (old of old_list){
-        if (old.name in new_dict) {
-            if (old.version !== new_dict[old.name].version) {
+    for (package of old_packages){
+        if (package.name in new_dict) {
+            if (package.version !== new_dict[package.name].version) {
                 diffs.push({
-                    "name":old.name,
+                    "name":package.name,
                     "type":"edit",
-                    "old_version":old.version,
-                    "new_version":new_dict[old.name].version,
+                    "old_version":package.version,
+                    "new_version":new_dict[package.name].version,
                 });
             }
         } else {
             diffs.push({
-                "name":old.name,
+                "name":package.name,
                 "type":"delete",
-                "old_version":old.version,
+                "old_version":package.version,
             });
         }
     }
-    for (new_item of new_list){
-        if (!(new_item.name in old_dict)) {
+    for (package of new_packages){
+        if (!(package.name in old_dict)) {
             diffs.push({
-                "name":new_item.name,
+                "name":package.name,
                 "type":"add",
-                "new_version":new_item.version,
+                "new_version":package.version,
             });
         }
     }
@@ -378,9 +378,6 @@ function render_dependency_change(package_name, old_version, new_version) {
         } else {
             new_version_html = old_version ? `-> ${new_version}` : new_version;
         }
-    }
-    if (package_name === "InlineStrings") {
-        console.log(package_name, old_version, new_version, `<td class="dependency-name">${name_prefix}${package_name}</td><td class="dependency-version">${old_version_html}</td><td class="dependency-version">${new_version_html}</td>`);
     }
 
     return `<td class="dependency-name">${name_prefix}${package_name}</td><td class="dependency-version">${old_version_html}</td><td class="dependency-version">${new_version_html}</td>`;
