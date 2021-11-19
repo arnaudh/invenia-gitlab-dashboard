@@ -10,7 +10,7 @@ import sys
 # The first capturing group (in brackets) is what is shown to the user
 patterns = [
     r'(Unsatisfiable requirements detected for package [^\s]+)',
-    r'Got exception outside of a @test (.+?)\s+Stacktrace:',
+    r'Got exception outside of a @test (?:.*?nested task error: )?(.+?)\s+Stacktrace:',
     r'Test Failed at.*?Expression: (.*?)\s+Stacktrace:',
     r'ERROR:.*?(UndefVarError: .*? not defined)',
     r'ERROR:.*?Job failed: (execution took longer than .*?) seconds',
