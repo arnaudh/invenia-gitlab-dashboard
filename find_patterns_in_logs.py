@@ -15,6 +15,7 @@ patterns = [
     r'ERROR:.*?(UndefVarError: .*? not defined)',
     r'ERROR:.*?Job failed: (execution took longer than .*?) seconds',
     r'(received signal: KILL)',
+    r'(Killed: 9)',
     r'ERROR: (Requested .+? from .+? has different version in metadata: \'.*?\')',
     r'FATAL: (password authentication failed for user ".+?")',
     r'(Backrun Failed)',
@@ -25,6 +26,7 @@ patterns = [
     r'(UndesiredFinalState: .+? entered the undesired final state .+?) section_end', # cloudspy error
     r'Error response from daemon: (.+?) section_end', # aws ecr get-login
     r'(mv: cannot move .+? No such file or directory)',
+    r'JULIA: (.*?Error: .+?)\s+Stacktrace', # PyJulia
 ]
 
 # Try the above patterns first, if no matches try the ones below (may be less informative or more verbose)
