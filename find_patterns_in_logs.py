@@ -86,7 +86,7 @@ def remove_ansi_escapes(text):
     # ansi_escape = re.compile(r'[^ -~]')
     return ansi_escape.sub('', text)
 
-def get_manifest_test_dependencies(text):
+def get_manifest_test_dependencies(clean_text):
     # Start
     #   [32m[1m Testing[22m[39m Features 
     #   ...
@@ -103,7 +103,6 @@ def get_manifest_test_dependencies(text):
     #   [32m[1m Building[22m[39m TimeZones →
     # At the end of the list we have:
     #   [32m[1mPrecompiling[22m[39m project... 
-    clean_text = remove_ansi_escapes(text)
     match = re.search(test_section_regex, clean_text)
     # match = re.search(r"\x1B(.*?)Manifest", text))
     if match is None:
@@ -144,7 +143,7 @@ for path in Path('responses').rglob('trace'):
     print(f"Project name: {projects[project_id]['path_with_namespace']}, project_id: {project_id}, job_id: {job_id}")
 
     with open(path, 'r') as f:
-        text = f.read()
+        text = remove_ansi_escapes(f.read())
 
         print("path", path)
         dependencies = get_manifest_test_dependencies(text)
