@@ -35,7 +35,7 @@ curl_wrapper() {
         fi
     fi
     # echo "NO ERROR" >&2
-    echo $output
+    echo "$output" # quotes are important, otherwise newlines will be removed
 }
 
 
