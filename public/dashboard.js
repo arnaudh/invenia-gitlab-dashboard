@@ -358,7 +358,7 @@ function render_dependencies_diff_pretty(dep_diff) {
     return message;
 }
 
-function render_dependency_change(package_name, old_version, new_version) {
+function render_dependency_change(package_name, old_version, new_version, markdown=false) {
     let name_prefix = "";
     if (old_version && !new_version) {
         name_prefix = "-";
@@ -367,20 +367,35 @@ function render_dependency_change(package_name, old_version, new_version) {
     }
     let old_version_html = old_version || "";
     let new_version_html = "";
+    function render_link(text, url) {
+        if (markdown) {
+            return `[${text}](${url})`;
+        } else {
+            return `<a href="${url}" target="_blank">${text}</a>`;
+        }
+    }
     if (new_version) {
         if (projects_dict[package_name+".jl"]) {
             let release_url = `${projects_dict[package_name+".jl"].metadata.web_url}/-/releases/${new_version}`;
-            new_version_html = `<a href="${release_url}" target="_blank">${new_version}</a>`;
+            new_version_html = render_link(new_version, release_url)
             if (old_version) {
                 let compare_url = `${projects_dict[package_name+".jl"].metadata.web_url}/-/compare/${old_version}...${new_version}`;
-                new_version_html = `<a href="${compare_url}" target="_blank">-></a> ` + new_version_html;
+                if (markdown) {
+                    new_version_html = `-> ${new_version_html} (${render_link("compare", compare_url)})`;
+                } else {
+                    new_version_html = render_link("->", compare_url) + " " + new_version_html;
+                }
             }
         } else {
             new_version_html = old_version ? `-> ${new_version}` : new_version;
         }
     }
 
-    return `<td class="dependency-name">${name_prefix}${package_name}</td><td class="dependency-version">${old_version_html}</td><td class="dependency-version">${new_version_html}</td>`;
+    if (markdown) {
+        return `* ${name_prefix}${package_name} ${old_version_html} ${new_version_html}`;
+    } else {
+        return `<td class="dependency-name">${name_prefix}${package_name}</td><td class="dependency-version">${old_version_html}</td><td class="dependency-version">${new_version_html}</td>`;
+    }
 }
 
 function render_dependencies_diff_full(dep_diff) {
@@ -401,6 +416,39 @@ function render_dependencies_diff_full(dep_diff) {
         }
     }
     return message;
+}
+
+function render_dependencies_markdown(dep_diff, previous_job) {
+    let previous_job_info = `[job ${previous_job.id}](${previous_job.web_url}), ${previous_job.status}`;
+    let message = ``;
+    if (dep_diff) {
+        if (dep_diff.length === 0) {
+            message += `No dependency changes since previous day (${previous_job_info}).\n\n`;
+        } else {
+            message += `Dependency changes since previous day (${previous_job_info}):\n\n`;
+            diff_strings = dep_diff.map(function (obj) {
+                return render_dependency_change(obj.name, obj.old_version, obj.new_version, markdown=true);
+            });
+            message += diff_strings.join("\n") + `\n\n`;
+        }
+    }
+    return message;
+}
+
+function new_issue_url(project, job, previous_job, patterns_to_actually_show, dep_diff) {
+    let title = ``; // Better force user to choose an appropriate title
+    let job_start_date = job.started_at ? " on " + date_without_time(new Date(job.started_at)) : "";
+    let description = `/label ~nightly\n\n`;
+    description += `Nightly job [${job.id}](${job.web_url}) ${job.status}${job_start_date}.\n\n`;
+    if (patterns_to_actually_show) {
+        description += `Error messages:\n\n`;
+        description += patterns_to_actually_show.map(p => "```\n" + p.matched_group + "\n```").join("\n");
+        description += `\n\n`;
+    }
+    if (previous_job) {
+        description += render_dependencies_markdown(dep_diff, previous_job);
+    }
+    return `${project.metadata.web_url}/-/issues/new?issue[title]=${encodeURIComponent(title)}&issue[description]=${encodeURIComponent(description)}`;
 }
 
 
@@ -441,9 +489,11 @@ function render_job(job, previous_job, project) {
             html += `<span class="tooltip">`;
             html += `<a href="${job.web_url}" target="_blank" rel="noopener noreferrer">${shorten_job_name(job.name)}</a>`;
             
+            let dep_diff = dependencies_diff(dependencies_previous_job, dependencies);
             // Tooltip
             html += `<span><span class="tooltiptext right">`;
             html += job.name;
+            html += `<a href="${new_issue_url(project, job, previous_job, patterns_to_actually_show, dep_diff)}" target="_blank" class="new-issue">New issue</a>`;
             html += `<h3>Error messages detected:</h3>`;
             // Only show "backup" errors if there are no normal ones
             if (patterns_to_actually_show.length === 0) {
@@ -458,7 +508,6 @@ function render_job(job, previous_job, project) {
                 html += `</ul>`;
             }
             html += `<h3>Dependency changes:</h3>`;
-            let dep_diff = dependencies_diff(dependencies_previous_job, dependencies);
             html += render_dependencies_diff_full(dep_diff);
             html += `</span></span>`;
 

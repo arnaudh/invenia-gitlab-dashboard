@@ -330,6 +330,11 @@ table .dashboard-error-message a {
   color: yellow;
 }
 
+.new-issue {
+  margin-left: 10px
+}
+
+
 .tooltiptext.center {
   /* When div */
   /*top: -100%;*/
