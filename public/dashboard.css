@@ -45,6 +45,10 @@ table a:visited {
     height: 20px;
 }
 
+.repo-name img {
+  height: 20px;
+}
+
 .form-line {
   /*margin-bottom: 15px*/
   margin: 5px 0px 10px 10px;
@@ -265,10 +269,7 @@ table th {
 }
 .tooltiptext {
   /*overflow: scroll;*/
-  white-space: normal;
-  overflow-wrap: break-word;
   /*max-width: 240px;*/
-  width: 500px;
 
   /*visibility: hidden;*/
   display: none;
@@ -287,6 +288,16 @@ table th {
 
   position: absolute;
   z-index: 20;
+}
+
+.pipeline-jobs .tooltiptext {
+  white-space: normal;
+  overflow-wrap: break-word;
+  width: 500px;
+}
+
+.repo-name .tooltiptext {
+  /*width: 200px;*/
 }
 
 .tooltiptext h3 {
@@ -349,8 +360,7 @@ table .dashboard-error-message a {
   top: -100%;
   right: 100%;*/
 
-  top: -15px;
-  right: 105%;
+  right: 100%;
 }
 
 
@@ -360,7 +370,7 @@ table .dashboard-error-message a {
 }
 
 /* Tooltip arrow */
-.tooltip .tooltiptext.left::after {
+.tooltip .tooltiptext.left.arrow::after {
   content: " ";
   position: absolute;
   top: 50%;

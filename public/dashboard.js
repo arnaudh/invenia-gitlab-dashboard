@@ -683,7 +683,17 @@ function render_project_pipelines() {
             addCell(row, cellValue, class_list);
         }
 
-        addCell(row, `<img src="${USERS_INFO[project.nightly_user].avatar}" class="avatar"/> <a href="${project.metadata.web_url}/-/pipelines">${project.metadata.name}</a>`, class_list=["sticky-right", "repo-name"]);
+        let project_info_html = `
+            <span class="tooltip" class="project-info">
+                <img src="${USERS_INFO[project.nightly_user].avatar}" class="avatar"/>
+                <a href="${project.metadata.web_url}" target="_blank">${project.metadata.name}</a>
+                <span class="tooltiptext left">
+                    <a href="${project.metadata.web_url}/-/issues" target="_blank">
+                        <img src="images/gitlab-issues.png"/> Issues
+                    </a>
+                </span>
+            </span>`;
+        addCell(row, project_info_html, class_list=["sticky-right", "repo-name"]);
 
     }
 
