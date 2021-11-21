@@ -630,6 +630,34 @@ function render_dates_header(table, timeline_start) {
     `);
 }
 
+function render_project_issues(issues) {
+    let issues_html = issues.map(i => `<li><a href="${i.web_url}" target="_blank">${i.ref} ${i.title}</a></li>`).join(``);
+    return `<ul>${issues_html}</ul>`
+}
+
+function render_project_info(project) {
+    return `
+        <span class="tooltip" class="project-info">
+            <img src="${USERS_INFO[project.nightly_user].avatar}" class="avatar"/>
+            <a href="${project.metadata.web_url}" target="_blank">
+                ${project.metadata.name}
+            </a>
+            <span class="tooltiptext left">
+                <div>
+                    <a href="${project.metadata.web_url}/-/issues" target="_blank">
+                        Nightly issues:
+                    </a>
+                    ${render_project_issues(project.issues)}
+                </div>
+                <div>
+                    <a href="${project.metadata.web_url}/-/issues" target="_blank">
+                        All issues
+                    </a>
+                </div>
+            </span>
+        </span>`;
+}
+
 function render_project_pipelines() {
     let state = window.history.state;
     
@@ -683,18 +711,7 @@ function render_project_pipelines() {
             addCell(row, cellValue, class_list);
         }
 
-        let project_info_html = `
-            <span class="tooltip" class="project-info">
-                <img src="${USERS_INFO[project.nightly_user].avatar}" class="avatar"/>
-                <a href="${project.metadata.web_url}" target="_blank">${project.metadata.name}</a>
-                <span class="tooltiptext left">
-                    <a href="${project.metadata.web_url}/-/issues" target="_blank">
-                        <img src="images/gitlab-issues.png"/> Issues
-                    </a>
-                </span>
-            </span>`;
-        addCell(row, project_info_html, class_list=["sticky-right", "repo-name"]);
-
+        addCell(row, render_project_info(project), class_list=["sticky-right", "repo-name"]);
     }
 
     table.parentNode.scrollLeft = 1000000;
