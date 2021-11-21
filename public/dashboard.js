@@ -502,7 +502,17 @@ function render_job(job, previous_job, project) {
                 html += `<ul>`;
                 for (let pattern of patterns_to_actually_show) {
                     html += `<li>`;
-                    html += `<div class="error-message">${pattern.matched_group}</div>`;
+                    // The tooltip has a hardcoded width (see CSS).
+                    // What if the error message is too long to fit in the given width?
+                    // a) If error message is multi-line, use `pre`, i.e. display newlines
+                    //    as they are in the error message, long lines will overflow
+                    //    and user will have to scroll right to see those lines in full
+                    // b) Else (error message is a single line), use `div`, i.e. allow the
+                    //    content to be rendered with line breaks in order to fit in the
+                    //    given width.
+                    // This makes things more readable for either case.
+                    let html_tag = pattern.matched_group.includes("\n") ? 'pre' : 'div';
+                    html += `<${html_tag} class="error-message">${pattern.matched_group}</${html_tag}>`;
                     html += `</li>`;
                 }
                 html += `</ul>`;

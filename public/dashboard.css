@@ -296,6 +296,10 @@ table th {
   width: 500px;
 }
 
+.pipeline-jobs .tooltiptext .error-message {
+  overflow: scroll;
+}
+
 .repo-name .tooltiptext {
   /*width: 200px;*/
 }
