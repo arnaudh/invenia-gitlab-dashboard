@@ -134,7 +134,8 @@ def get_manifest_test_dependencies(clean_text):
 
 extracted_info = {}
 
-for path in Path('responses').rglob('trace'):
+paths = list(Path('responses').rglob('trace'))
+for i, path in enumerate(paths):
     match = re.match(r'responses/projects/(\d+)/jobs/(\d+)/trace', str(path))
     if match is None:
         print("Path is not as expected")
@@ -144,7 +145,7 @@ for path in Path('responses').rglob('trace'):
     # if job_id != 1305773:
     #     continue
 
-    print(f"Project name: {projects[project_id]['path_with_namespace']}, project_id: {project_id}, job_id: {job_id}")
+    print(f"[{i+1}/{len(paths)}] Project name: {projects[project_id]['path_with_namespace']}, project_id: {project_id}, job_id: {job_id}")
 
     with open(path, 'r') as f:
         text = remove_ansi_escapes(f.read())
