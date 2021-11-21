@@ -35,6 +35,10 @@ backup_patterns = [
     r'ERROR:(?: LoadError:)? (.+?)\s+Stacktrace:', # Generic julia error
 ]
 
+ignore_patterns = [
+    r'Package .+ errored during testing',
+]
+
 
 # # TODO explore many kinds of error before deciding on this "smart" hierarchy approach (maybe it doesn't apply that well)
 # error_hierarchy = [
@@ -154,6 +158,8 @@ for path in Path('responses').rglob('trace'):
             error_messages.extend(find_pattern_occurences(pattern, text, "normal"))
         for pattern in backup_patterns:
             error_messages.extend(find_pattern_occurences(pattern, text, "backup"))
+        # Discard unuseful patterns
+        error_messages = [e for e in error_messages if not any([re.search(p, e["matched_group"]) for p in ignore_patterns])]
         print(f"Found {len(error_messages)} error(s) in {path}")
 
         if len(dependencies) > 0 or len(error_messages) > 0:
