@@ -10,7 +10,7 @@ import sys
 # The first capturing group (in brackets) is what is shown to the user
 patterns = [
     r'(Unsatisfiable requirements detected for package [^\s]+)',
-    r'Got exception outside of a @test (?:.*?nested task error: )?(.+?)\s+Stacktrace:',
+    r'Got exception outside of a @test\s+(?:.*?nested task error: )?(.+?)\s+Stacktrace:',
     r'Test Failed at.*?Expression: (.*?)\s+Stacktrace:',
     r'ERROR:.*?(UndefVarError: .*? not defined)',
     r'ERROR:.*?Job failed: (execution took longer than .*?) seconds',
@@ -32,7 +32,7 @@ patterns = [
 # Try the above patterns first, if no matches try the ones below (may be less informative or more verbose)
 backup_patterns = [
     r'([Cc]ommand (".+?"|\'.+?\') failed with (exit status|error code) \d+)',
-    r'ERROR:(?: \[22m\[39m)?(?: LoadError:)? (.+?) Stacktrace:',
+    r'ERROR:(?: LoadError:)? (.+?)\s+Stacktrace:', # Generic julia error
 ]
 
 
@@ -63,7 +63,7 @@ for f in glob.glob("responses/projects/*.json"):
 
 def find_pattern_occurences(pattern, text, pattern_type):
     results = []
-    for match in re.finditer(pattern, text):
+    for match in re.finditer(pattern, text, flags=re.DOTALL):
         match_result = {
             # "pattern": pattern,
             # "matched_text": match.group(0),
@@ -76,9 +76,9 @@ def find_pattern_occurences(pattern, text, pattern_type):
     return results
 
 # test_section_regex = r"\x1B\[1m Testing\x1B\[22m\x1B\[39m (?P<package_name>.*?) \x1B.*\/Manifest.toml` (?P<dep_list>.*)\x1B\[32m\x1B\[1mPrecompiling\x1B\[22m\x1B\[39m project"
-test_section_regex = r" Testing (?P<package_name>.*?) .*?\/Manifest.toml` (?P<dep_list>.*?)Precompiling project"
+test_section_regex = r" Testing (?P<package_name>.*?)\n.*?\/Manifest.toml`\n(?P<dep_list>.*?)Precompiling project"
 # test_section_regex = r" Testing\s+(.*?Predictors)"
-dependency_regex = r"\[(?P<uuid_short>.*?)\](?: \+)? (?P<name>.*?) (?P<version>.*?) "
+dependency_regex = r"\[(?P<uuid_short>.*?)\](?: \+)? (?P<name>.*?) (?P<version>.*?)\n"
 
 # https://stackoverflow.com/questions/14693701/how-can-i-remove-the-ansi-escape-sequences-from-a-string-in-python
 def remove_ansi_escapes(text):
@@ -103,7 +103,7 @@ def get_manifest_test_dependencies(clean_text):
     #   [32m[1m Building[22m[39m TimeZones →
     # At the end of the list we have:
     #   [32m[1mPrecompiling[22m[39m project... 
-    match = re.search(test_section_regex, clean_text)
+    match = re.search(test_section_regex, clean_text, flags=re.DOTALL)
     # match = re.search(r"\x1B(.*?)Manifest", text))
     if match is None:
         # print(text)
