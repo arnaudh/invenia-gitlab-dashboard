@@ -34,12 +34,6 @@ h2 {
 }
 
 table a {
-    text-decoration: none;
-}
-table a:hover {
-   text-decoration:underline;
-}
-table a {
     color: #303030;
 }
 table a:visited {
@@ -220,13 +214,36 @@ table.pipeline-jobs td.error-messages {
   text-align: left;
   width: 50%;
 }
+table.pipeline-jobs td.dependencies {
+  text-align: right;
+  width: 50%;
+  padding: 0px 2px;
+}
+
+td.dependencies .dependencies-short {
+  /*background-color: #CCC;*/
+  background-color: #DDD;
+  /*color: #fff;*/
+  /*color: #000;*/
+  border-radius: 2px;
+  padding: 1px;
+  /*margin-top: 10px;*/
+  font-family: "Menlo", "DejaVu Sans Mono", "Liberation Mono", "Consolas", "Ubuntu Mono", "Courier New", "andale mono", "lucida console", monospace;
+
+}
+td.dependency-name {
+  text-align: left;
+}
+td.dependency-version {
+  text-align: left;
+}
 .pipeline-jobs ul {
     margin: 0px;
     list-style-type: none;
     padding: 0;
     /*font-style: italic;*/
 }
-.pipeline-jobs li {
+.pipeline-jobs .error-messages li {
   padding: 2px;
 }
 .pipeline-jobs td {
@@ -246,16 +263,16 @@ table th {
   /*display: inline-block;*/
   /*border-bottom: 1px dotted black;*/
 }
-
 .tooltiptext {
   /*overflow: scroll;*/
+  white-space: normal;
   overflow-wrap: break-word;
-  max-width: 240px;
+  /*max-width: 240px;*/
+  width: 500px;
 
   /*visibility: hidden;*/
   display: none;
 
-  /*width: 300px;*/
 
   /* position tooltip */
   
@@ -263,19 +280,26 @@ table th {
   background-color: white;
   border: 1px solid black;
   /*color: #fff;*/
-  text-align: center;
+  text-align: left;
   border-radius: 2px;
-  padding: 1px;
-  margin-top: 10px;
+  padding: 4px;
+  /*margin-top: 10px;*/
 
   position: absolute;
   z-index: 20;
 }
 
+.tooltiptext h3 {
+  margin: 5px 0;
+}
+
+.tooltiptext .dependencies-full {
+  background-color: #DDD;
+  border-radius: 2px;
+}
 
 .tooltip .tooltiptext.error-message {
   white-space: normal;
-  /* a bit small, but necessary to keep it in view for the right most column */
   width: 215px;
   border: none;
   background-color:  black;
@@ -287,8 +311,9 @@ table th {
   color: #fff;
   border-radius: 2px;
   padding: 1px;
-  margin-top: 10px;
+  margin-top: 5px;
   font-family: "Menlo", "DejaVu Sans Mono", "Liberation Mono", "Consolas", "Ubuntu Mono", "Courier New", "andale mono", "lucida console", monospace;
+  text-align: left;
 }
 
 .dashboard-error-message {

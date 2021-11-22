@@ -42,7 +42,7 @@ When the script is run as part of the gitlab-dashboard CI pipeline, it reads the
 
 ## Run locally
 
-1. Generate a Gitlab [Personal Access Token](https://gitlab.invenia.ca/profile/personal_access_tokens), selecting the `read_api` scope
+1. Generate a Gitlab [Personal Access Token](https://gitlab.invenia.ca/-/profile/personal_access_tokens), selecting the `read_api` scope
 
 2. Export it in your terminal
 
