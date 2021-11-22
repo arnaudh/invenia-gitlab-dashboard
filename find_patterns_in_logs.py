@@ -79,42 +79,40 @@ def find_pattern_occurences(pattern, text, pattern_type):
         # print("MATCH", match_result)
     return results
 
-# test_section_regex = r"\x1B\[1m Testing\x1B\[22m\x1B\[39m (?P<package_name>.*?) \x1B.*\/Manifest.toml` (?P<dep_list>.*)\x1B\[32m\x1B\[1mPrecompiling\x1B\[22m\x1B\[39m project"
+# Dependences are printed in the logs when running tests for a given package, e.g.:
+# ```
+#   ...
+#      Testing AgentSPP
+#       Status `/tmp/jl_YQC30Y/Project.toml`
+#   [abb87260] AgentSPP v1.5.0 `/builds/invenia/AgentSPP.jl`
+#   [6ac7752a] Agents v0.19.20
+#   ...
+#   [ade2ca70] Dates `@stdlib/Dates`
+#   [8dfed614] Test `@stdlib/Test`
+#       Status `/tmp/jl_YQC30Y/Manifest.toml`
+#   [fbe9abb3] AWS v1.68.0
+#   [1c724243] AWSS3 v0.9.2
+#   ...
+#   [8e850ede] nghttp2_jll `@stdlib/nghttp2_jll`
+#   [3f19e933] p7zip_jll `@stdlib/p7zip_jll`
+# Precompiling project...
+# ```
+# The dependencies we care about are the ones showing in the Manifest.toml section.
+# Sometimes dependencies show up with a +:
+#   [1c724243] + AWSS3 v0.9.2
 test_section_regex = r" Testing (?P<package_name>.*?)\n.*?\/Manifest.toml`\n(?P<dep_list>.*?)Precompiling project"
-# test_section_regex = r" Testing\s+(.*?Predictors)"
 dependency_regex = r"\[(?P<uuid_short>.*?)\](?: \+)? (?P<name>.*?) (?P<version>.*?)\n"
 
 # https://stackoverflow.com/questions/14693701/how-can-i-remove-the-ansi-escape-sequences-from-a-string-in-python
 def remove_ansi_escapes(text):
     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-    # ansi_escape = re.compile(r'[^ -~]')
     return ansi_escape.sub('', text)
 
 def get_manifest_test_dependencies(clean_text):
-    # Start
-    #   [32m[1m Testing[22m[39m Features 
-    #   ...
-    #   [32m[1m Status[22m[39m `~/builds/f75a2375/0/invenia/Features.jl.tmp/jl_s1ztoa/Manifest.toml` 
-    # deps show up as:
-    #   [90m [fbe9abb3] [39mAWS v1.69.0
-    # OR (with a `+`):
-    #   [1c724243] + AWSS3 v0.9.2
-    # current package:
-    #   [90m [a481f681] [39mFeatures v3.1.1 `~/builds/f75a2375/0/invenia/Features.jl` 
-    # Stdlib deps show up as:
-    #   [cf7118a7] [39mUUIDs `@stdlib/UUIDs`
-    # Some deps get built in the middle:
-    #   [32m[1m Building[22m[39m TimeZones →
-    # At the end of the list we have:
-    #   [32m[1mPrecompiling[22m[39m project... 
     match = re.search(test_section_regex, clean_text, flags=re.DOTALL)
-    # match = re.search(r"\x1B(.*?)Manifest", text))
     if match is None:
-        # print(text)
         print("text did not match test_section_regex")
-        # sys.exit(1)
         return []
-    # print(f"match.group()=[{match.group()}]")
 
     matches = re.findall(dependency_regex, match.group("dep_list"))
     if len(matches) == 0:
@@ -123,7 +121,6 @@ def get_manifest_test_dependencies(clean_text):
 
     dependencies = []
     for match in matches:
-        # print("match", match)
         dependencies.append({
             'uuid': match[0],
             'name': match[1],
@@ -142,8 +139,6 @@ for i, path in enumerate(paths):
         sys.exit(1)
     project_id = int(match.group(1))
     job_id = int(match.group(2))
-    # if job_id != 1305773:
-    #     continue
 
     print(f"[{i+1}/{len(paths)}] Project name: {projects[project_id]['path_with_namespace']}, project_id: {project_id}, job_id: {job_id}")
 

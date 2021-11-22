@@ -684,10 +684,6 @@ function render_project_pipelines() {
     let table_body = document.createElement('tbody');
     table.appendChild(table_body);
     for (let project of projects_sorted) {
-        // if (project.metadata.id !== 494) continue;
-        // if (project.metadata.id !== 542) continue; // PortfolioStrategies
-        // if (project.metadata.id !== 473) continue; // Backruns
-        // if (project.metadata.id !== 391) continue;
         if (!has_pipelines_after_date(project, timeline_start)) {
             continue;
         }

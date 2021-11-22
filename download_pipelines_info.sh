@@ -106,7 +106,6 @@ for i in "${!project_ids[@]}"; do
             echo " Got a 403 Forbidden for $url (this is likely ok, some repos don't allow access to CI)"
         fi
         num_pipelines=$(jq 'length' responses/projects/$project_id/pipelines/by_user/$nightly_user/page_1.json)
-        # echo $num_pipelines
         if [[ $num_pipelines -gt 0 ]]; then
             echo ',"nightly_user":"'$nightly_user'"' >> $combined_json_file
         fi
@@ -155,14 +154,11 @@ for i in "${!project_ids[@]}"; do
 
     # for pipeline_id in ${pipeline_ids[@]}; do
     for i in ${!pipeline_ids[@]}; do
-        # echo pipeline $i
         pipeline_id=${pipeline_ids[$i]}
-        # if [[ ! $pipeline_id = 156496 ]]; then continue; fi
         echo "pipeline_ids ${pipeline_ids[@]}"
         echo "pipeline i: $i"
         echo "pipeline id: ${pipeline_ids[$i]} "
         echo "length: ${#pipeline_ids[@]}"
-        # next_pipeline_id="${pipeline_ids[$((i+1))]}"
         if (( $((i+1)) < ${#pipeline_ids[@]})); then
             next_pipeline_id=${pipeline_ids[$((i+1))]}
             echo "next_pipeline_id $next_pipeline_id"
