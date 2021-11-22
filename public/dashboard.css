@@ -45,7 +45,7 @@ table a:visited {
     height: 20px;
 }
 
-.repo-name img {
+.project-info img {
   height: 20px;
 }
 
@@ -149,6 +149,7 @@ table a:visited {
 #results-table thead th:last-of-type {
   box-shadow: inset 0px -1px 0 #ddd;
   background: white;
+  min-width: 240px; /* so there is enough room for popup on the last night column */
 }
 /* Results table: other stuff */
 #results-table {
@@ -201,7 +202,7 @@ table a:visited {
   border-width: 0px 2px 0px 2px;
 }
 
-.repo-name * {
+.project-info * {
   vertical-align: middle;
 }
 
@@ -293,15 +294,19 @@ table th {
 .pipeline-jobs .tooltiptext {
   white-space: normal;
   overflow-wrap: break-word;
-  width: 500px;
+  width: 300px;
 }
 
 .pipeline-jobs .tooltiptext .error-message {
   overflow: scroll;
 }
 
-.repo-name .tooltiptext {
-  /*width: 200px;*/
+.project-info .tooltiptext {
+  right: 100%;
+}
+
+.last-updated-time .tooltiptext {
+  right: 100%;
 }
 
 .tooltiptext h3 {
@@ -350,22 +355,6 @@ table .dashboard-error-message a {
 }
 
 
-.tooltiptext.center {
-  /* When div */
-  /*top: -100%;*/
-
-  /* When span */
-  top: -10px;
-  left: 0;
-}
-
-.tooltiptext.left {
-  /*When div
-  top: -100%;
-  right: 100%;*/
-
-  right: 100%;
-}
 
 
 .tooltip:hover .tooltiptext {

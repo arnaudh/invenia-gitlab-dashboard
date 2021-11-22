@@ -402,7 +402,7 @@ function render_dependencies_diff_full(dep_diff) {
     let message = "";
     if (dep_diff === null) {
         // message = "?";
-        message = "<i>This job and/or the one from the previous day doesn't have a dependencies list.</i>";
+        message = "<i>Couldn't get a dependency list for this job and/or the job from the previous day.</i>";
     } else {
         if (dep_diff.length === 0) {
             message = `<i>None.</i>`;
@@ -419,13 +419,13 @@ function render_dependencies_diff_full(dep_diff) {
 }
 
 function render_dependencies_markdown(dep_diff, previous_job) {
-    let previous_job_info = `[job ${previous_job.id}](${previous_job.web_url}), ${previous_job.status}`;
+    let previous_job_info = `job [${previous_job.id}](${previous_job.web_url}), ${previous_job.status}`;
     let message = ``;
     if (dep_diff) {
         if (dep_diff.length === 0) {
-            message += `No dependency changes since previous day (${previous_job_info}).\n\n`;
+            message += `No dependency changes from previous day (${previous_job_info}).\n\n`;
         } else {
-            message += `Dependency changes since previous day (${previous_job_info}):\n\n`;
+            message += `Dependency changes from previous day (${previous_job_info}):\n\n`;
             diff_strings = dep_diff.map(function (obj) {
                 return render_dependency_change(obj.name, obj.old_version, obj.new_version, markdown=true);
             });
@@ -437,11 +437,10 @@ function render_dependencies_markdown(dep_diff, previous_job) {
 
 function new_issue_url(project, job, previous_job, patterns_to_actually_show, dep_diff) {
     let title = ``; // Better force user to choose an appropriate title
-    let job_start_date = job.started_at ? " on " + date_without_time(new Date(job.started_at)) : "";
+    let job_start_date = job.started_at ? " on " + new Date(job.started_at).toISOString().slice(0, 10) : "";
     let description = `/label ~nightly\n\n`;
     description += `Nightly job [${job.id}](${job.web_url}) ${job.status}${job_start_date}.\n\n`;
-    if (patterns_to_actually_show) {
-        description += `Error messages:\n\n`;
+    if (patterns_to_actually_show.length > 0) {
         description += patterns_to_actually_show.map(p => "```\n" + p.matched_group + "\n```").join("\n");
         description += `\n\n`;
     }
@@ -491,7 +490,7 @@ function render_job(job, previous_job, project) {
             
             let dep_diff = dependencies_diff(dependencies_previous_job, dependencies);
             // Tooltip
-            html += `<span><span class="tooltiptext right">`;
+            html += `<span><span class="tooltiptext">`;
             html += job.name;
             html += `<a href="${new_issue_url(project, job, previous_job, patterns_to_actually_show, dep_diff)}" target="_blank" class="new-issue">New issue</a>`;
             html += `<h3>Error messages detected:</h3>`;
@@ -635,36 +634,36 @@ function render_dates_header(table, timeline_start) {
     addTH(days_row, `${month_prefix} ${today.getDate()} (last night)`, class_list=["today"]);
     addTH(days_row, `
         <span class="tooltip">updated ${time_since(last_updated)} ago
-            <span><span class="tooltiptext left">${last_updated.toISOString()}</span></span>
+            <span><span class="tooltiptext">${last_updated.toISOString()}</span></span>
         </span>
-    `);
+    `, class_list=["last-updated-time"]);
 }
 
 function render_project_issues(issues) {
-    let issues_html = issues.map(i => `<li><a href="${i.web_url}" target="_blank">${i.ref} ${i.title}</a></li>`).join(``);
-    return `<ul>${issues_html}</ul>`
+    if (issues.length > 0) {
+        let issues_html = issues.map(i => `<li><a href="${i.web_url}" target="_blank">${i.ref} ${i.title}</a></li>`).join(``);
+        return `<ul>${issues_html}</ul>`;
+    } else {
+        return `<i>none.</i>`;
+    }
 }
 
 function render_project_info(project) {
     return `
-        <span class="tooltip" class="project-info">
+        <span class="project-info">
+        <span class="tooltip">
             <img src="${USERS_INFO[project.nightly_user].avatar}" class="avatar"/>
-            <a href="${project.metadata.web_url}" target="_blank">
-                ${project.metadata.name}
-            </a>
-            <span class="tooltiptext left">
+            <a href="${project.metadata.web_url}" target="_blank">${project.metadata.name}</a>
+            <span class="tooltiptext">
                 <div>
-                    <a href="${project.metadata.web_url}/-/issues" target="_blank">
-                        Nightly issues:
-                    </a>
+                    <a href="${project.metadata.web_url}/-/issues?label_name=nightly" target="_blank">Nightly issues:</a>
                     ${render_project_issues(project.issues)}
                 </div>
                 <div>
-                    <a href="${project.metadata.web_url}/-/issues" target="_blank">
-                        All issues
-                    </a>
+                    <a href="${project.metadata.web_url}/-/issues" target="_blank">All issues</a>
                 </div>
             </span>
+        </span>
         </span>`;
 }
 
@@ -721,7 +720,7 @@ function render_project_pipelines() {
             addCell(row, cellValue, class_list);
         }
 
-        addCell(row, render_project_info(project), class_list=["sticky-right", "repo-name"]);
+        addCell(row, render_project_info(project), class_list=["sticky-right"]);
     }
 
     table.parentNode.scrollLeft = 1000000;
