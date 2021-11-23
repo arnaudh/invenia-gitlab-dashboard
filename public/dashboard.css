@@ -45,6 +45,10 @@ table a:visited {
     height: 20px;
 }
 
+.project-info img {
+  height: 20px;
+}
+
 .form-line {
   /*margin-bottom: 15px*/
   margin: 5px 0px 10px 10px;
@@ -145,6 +149,7 @@ table a:visited {
 #results-table thead th:last-of-type {
   box-shadow: inset 0px -1px 0 #ddd;
   background: white;
+  min-width: 240px; /* so there is enough room for popup on the last night column */
 }
 /* Results table: other stuff */
 #results-table {
@@ -197,7 +202,7 @@ table a:visited {
   border-width: 0px 2px 0px 2px;
 }
 
-.repo-name * {
+.project-info * {
   vertical-align: middle;
 }
 
@@ -265,10 +270,7 @@ table th {
 }
 .tooltiptext {
   /*overflow: scroll;*/
-  white-space: normal;
-  overflow-wrap: break-word;
   /*max-width: 240px;*/
-  width: 500px;
 
   /*visibility: hidden;*/
   display: none;
@@ -287,6 +289,24 @@ table th {
 
   position: absolute;
   z-index: 20;
+}
+
+.pipeline-jobs .tooltiptext {
+  white-space: normal;
+  overflow-wrap: break-word;
+  width: 300px;
+}
+
+.pipeline-jobs .tooltiptext .error-message {
+  overflow: scroll;
+}
+
+.project-info .tooltiptext {
+  right: 100%;
+}
+
+.last-updated-time .tooltiptext {
+  right: 100%;
 }
 
 .tooltiptext h3 {
@@ -330,23 +350,11 @@ table .dashboard-error-message a {
   color: yellow;
 }
 
-.tooltiptext.center {
-  /* When div */
-  /*top: -100%;*/
-
-  /* When span */
-  top: -10px;
-  left: 0;
+.new-issue {
+  margin-left: 10px
 }
 
-.tooltiptext.left {
-  /*When div
-  top: -100%;
-  right: 100%;*/
 
-  top: -15px;
-  right: 105%;
-}
 
 
 .tooltip:hover .tooltiptext {
@@ -355,7 +363,7 @@ table .dashboard-error-message a {
 }
 
 /* Tooltip arrow */
-.tooltip .tooltiptext.left::after {
+.tooltip .tooltiptext.left.arrow::after {
   content: " ";
   position: absolute;
   top: 50%;

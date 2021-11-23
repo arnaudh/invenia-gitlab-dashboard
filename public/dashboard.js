@@ -358,7 +358,7 @@ function render_dependencies_diff_pretty(dep_diff) {
     return message;
 }
 
-function render_dependency_change(package_name, old_version, new_version) {
+function render_dependency_change(package_name, old_version, new_version, markdown=false) {
     let name_prefix = "";
     if (old_version && !new_version) {
         name_prefix = "-";
@@ -367,27 +367,42 @@ function render_dependency_change(package_name, old_version, new_version) {
     }
     let old_version_html = old_version || "";
     let new_version_html = "";
+    function render_link(text, url) {
+        if (markdown) {
+            return `[${text}](${url})`;
+        } else {
+            return `<a href="${url}" target="_blank">${text}</a>`;
+        }
+    }
     if (new_version) {
         if (projects_dict[package_name+".jl"]) {
             let release_url = `${projects_dict[package_name+".jl"].metadata.web_url}/-/releases/${new_version}`;
-            new_version_html = `<a href="${release_url}" target="_blank">${new_version}</a>`;
+            new_version_html = render_link(new_version, release_url)
             if (old_version) {
                 let compare_url = `${projects_dict[package_name+".jl"].metadata.web_url}/-/compare/${old_version}...${new_version}`;
-                new_version_html = `<a href="${compare_url}" target="_blank">-></a> ` + new_version_html;
+                if (markdown) {
+                    new_version_html = `-> ${new_version_html} (${render_link("compare", compare_url)})`;
+                } else {
+                    new_version_html = render_link("->", compare_url) + " " + new_version_html;
+                }
             }
         } else {
             new_version_html = old_version ? `-> ${new_version}` : new_version;
         }
     }
 
-    return `<td class="dependency-name">${name_prefix}${package_name}</td><td class="dependency-version">${old_version_html}</td><td class="dependency-version">${new_version_html}</td>`;
+    if (markdown) {
+        return `* ${name_prefix}${package_name} ${old_version_html} ${new_version_html}`;
+    } else {
+        return `<td class="dependency-name">${name_prefix}${package_name}</td><td class="dependency-version">${old_version_html}</td><td class="dependency-version">${new_version_html}</td>`;
+    }
 }
 
 function render_dependencies_diff_full(dep_diff) {
     let message = "";
     if (dep_diff === null) {
         // message = "?";
-        message = "<i>This job and/or the one from the previous day doesn't have a dependencies list.</i>";
+        message = "<i>Couldn't get a dependency list for this job and/or the job from the previous day.</i>";
     } else {
         if (dep_diff.length === 0) {
             message = `<i>None.</i>`;
@@ -401,6 +416,38 @@ function render_dependencies_diff_full(dep_diff) {
         }
     }
     return message;
+}
+
+function render_dependencies_markdown(dep_diff, previous_job) {
+    let previous_job_info = `job [${previous_job.id}](${previous_job.web_url}), ${previous_job.status}`;
+    let message = ``;
+    if (dep_diff) {
+        if (dep_diff.length === 0) {
+            message += `No dependency changes from previous day (${previous_job_info}).\n\n`;
+        } else {
+            message += `Dependency changes from previous day (${previous_job_info}):\n\n`;
+            diff_strings = dep_diff.map(function (obj) {
+                return render_dependency_change(obj.name, obj.old_version, obj.new_version, markdown=true);
+            });
+            message += diff_strings.join("\n") + `\n\n`;
+        }
+    }
+    return message;
+}
+
+function new_issue_url(project, job, previous_job, patterns_to_actually_show, dep_diff) {
+    let title = ``; // Better force user to choose an appropriate title
+    let job_start_date = job.started_at ? " on " + new Date(job.started_at).toISOString().slice(0, 10) : "";
+    let description = `/label ~nightly\n\n`;
+    description += `Nightly job [${job.id}](${job.web_url}) ${job.status}${job_start_date}.\n\n`;
+    if (patterns_to_actually_show.length > 0) {
+        description += patterns_to_actually_show.map(p => "```\n" + p.matched_group + "\n```").join("\n");
+        description += `\n\n`;
+    }
+    if (previous_job) {
+        description += render_dependencies_markdown(dep_diff, previous_job);
+    }
+    return `${project.metadata.web_url}/-/issues/new?issue[title]=${encodeURIComponent(title)}&issue[description]=${encodeURIComponent(description)}`;
 }
 
 
@@ -441,9 +488,11 @@ function render_job(job, previous_job, project) {
             html += `<span class="tooltip">`;
             html += `<a href="${job.web_url}" target="_blank" rel="noopener noreferrer">${shorten_job_name(job.name)}</a>`;
             
+            let dep_diff = dependencies_diff(dependencies_previous_job, dependencies);
             // Tooltip
-            html += `<span><span class="tooltiptext right">`;
+            html += `<span><span class="tooltiptext">`;
             html += job.name;
+            html += `<a href="${new_issue_url(project, job, previous_job, patterns_to_actually_show, dep_diff)}" target="_blank" class="new-issue">New issue</a>`;
             html += `<h3>Error messages detected:</h3>`;
             // Only show "backup" errors if there are no normal ones
             if (patterns_to_actually_show.length === 0) {
@@ -452,13 +501,22 @@ function render_job(job, previous_job, project) {
                 html += `<ul>`;
                 for (let pattern of patterns_to_actually_show) {
                     html += `<li>`;
-                    html += `<div class="error-message">${pattern.matched_group}</div>`;
+                    // The tooltip has a hardcoded width (see CSS).
+                    // What if the error message is too long to fit in the given width?
+                    // a) If error message is multi-line, use `pre`, i.e. display newlines
+                    //    as they are in the error message, long lines will overflow
+                    //    and user will have to scroll right to see those lines in full
+                    // b) Else (error message is a single line), use `div`, i.e. allow the
+                    //    content to be rendered with line breaks in order to fit in the
+                    //    given width.
+                    // This makes things more readable for either case.
+                    let html_tag = pattern.matched_group.includes("\n") ? 'pre' : 'div';
+                    html += `<${html_tag} class="error-message">${pattern.matched_group}</${html_tag}>`;
                     html += `</li>`;
                 }
                 html += `</ul>`;
             }
             html += `<h3>Dependency changes:</h3>`;
-            let dep_diff = dependencies_diff(dependencies_previous_job, dependencies);
             html += render_dependencies_diff_full(dep_diff);
             html += `</span></span>`;
 
@@ -576,9 +634,37 @@ function render_dates_header(table, timeline_start) {
     addTH(days_row, `${month_prefix} ${today.getDate()} (last night)`, class_list=["today"]);
     addTH(days_row, `
         <span class="tooltip">updated ${time_since(last_updated)} ago
-            <span><span class="tooltiptext left">${last_updated.toISOString()}</span></span>
+            <span><span class="tooltiptext">${last_updated.toISOString()}</span></span>
         </span>
-    `);
+    `, class_list=["last-updated-time"]);
+}
+
+function render_project_issues(issues) {
+    if (issues.length > 0) {
+        let issues_html = issues.map(i => `<li><a href="${i.web_url}" target="_blank">${i.ref} ${i.title}</a></li>`).join(``);
+        return `<ul>${issues_html}</ul>`;
+    } else {
+        return `<i>none.</i>`;
+    }
+}
+
+function render_project_info(project) {
+    return `
+        <span class="project-info">
+        <span class="tooltip">
+            <img src="${USERS_INFO[project.nightly_user].avatar}" class="avatar"/>
+            <a href="${project.metadata.web_url}" target="_blank">${project.metadata.name}</a>
+            <span class="tooltiptext">
+                <div>
+                    <a href="${project.metadata.web_url}/-/issues?label_name=nightly" target="_blank">Nightly issues:</a>
+                    ${render_project_issues(project.issues)}
+                </div>
+                <div>
+                    <a href="${project.metadata.web_url}/-/issues" target="_blank">All issues</a>
+                </div>
+            </span>
+        </span>
+        </span>`;
 }
 
 function render_project_pipelines() {
@@ -598,10 +684,6 @@ function render_project_pipelines() {
     let table_body = document.createElement('tbody');
     table.appendChild(table_body);
     for (let project of projects_sorted) {
-        // if (project.metadata.id !== 494) continue;
-        // if (project.metadata.id !== 542) continue; // PortfolioStrategies
-        // if (project.metadata.id !== 473) continue; // Backruns
-        // if (project.metadata.id !== 391) continue;
         if (!has_pipelines_after_date(project, timeline_start)) {
             continue;
         }
@@ -634,8 +716,7 @@ function render_project_pipelines() {
             addCell(row, cellValue, class_list);
         }
 
-        addCell(row, `<img src="${USERS_INFO[project.nightly_user].avatar}" class="avatar"/> <a href="${project.metadata.web_url}/-/pipelines">${project.metadata.name}</a>`, class_list=["sticky-right", "repo-name"]);
-
+        addCell(row, render_project_info(project), class_list=["sticky-right"]);
     }
 
     table.parentNode.scrollLeft = 1000000;

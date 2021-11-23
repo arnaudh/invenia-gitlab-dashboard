@@ -35,7 +35,7 @@ curl_wrapper() {
         fi
     fi
     # echo "NO ERROR" >&2
-    echo $output
+    echo "$output" # quotes are important, otherwise newlines will be removed
 }
 
 
@@ -90,6 +90,13 @@ for i in "${!project_ids[@]}"; do
     web_url=$(jq '.web_url' responses/projects/$project_id/project.json -r)
     echo " Project name: '$project_name' ($web_url)"
 
+    # Will get only the first 20 issues (`/issues` is paginated but we don't paginate for simplicity here)
+    curl_wrapper -H "Private-Token: $GITLAB_ACCESS_TOKEN" "https://gitlab.invenia.ca/api/v4/projects/$project_id/issues?labels=nightly&state=opened" > responses/projects/$project_id/issues.json
+    echo ',"issues":' >> $combined_json_file
+    cat responses/projects/$project_id/issues.json \
+        | jq -c '[.[] | {ref: .references.short, title:.title, web_url:.web_url, created_at:.created_at, updated_at:.updated_at}]' \
+        >> $combined_json_file
+
     for nightly_user in ${nightly_users[@]}; do
         mkdir -p responses/projects/$project_id/pipelines/by_user/$nightly_user
         url="https://gitlab.invenia.ca/api/v4/projects/$project_id/pipelines?username=${nightly_user}&per_page=$MAX_N_PIPELINES"
@@ -99,7 +106,6 @@ for i in "${!project_ids[@]}"; do
             echo " Got a 403 Forbidden for $url (this is likely ok, some repos don't allow access to CI)"
         fi
         num_pipelines=$(jq 'length' responses/projects/$project_id/pipelines/by_user/$nightly_user/page_1.json)
-        # echo $num_pipelines
         if [[ $num_pipelines -gt 0 ]]; then
             echo ',"nightly_user":"'$nightly_user'"' >> $combined_json_file
         fi
@@ -148,14 +154,11 @@ for i in "${!project_ids[@]}"; do
 
     # for pipeline_id in ${pipeline_ids[@]}; do
     for i in ${!pipeline_ids[@]}; do
-        # echo pipeline $i
         pipeline_id=${pipeline_ids[$i]}
-        # if [[ ! $pipeline_id = 156496 ]]; then continue; fi
         echo "pipeline_ids ${pipeline_ids[@]}"
         echo "pipeline i: $i"
         echo "pipeline id: ${pipeline_ids[$i]} "
         echo "length: ${#pipeline_ids[@]}"
-        # next_pipeline_id="${pipeline_ids[$((i+1))]}"
         if (( $((i+1)) < ${#pipeline_ids[@]})); then
             next_pipeline_id=${pipeline_ids[$((i+1))]}
             echo "next_pipeline_id $next_pipeline_id"
@@ -191,7 +194,9 @@ echo ']' >> $combined_json_file # end of file
 echo "Wrote to $combined_json_file"
 
 # Selecting only fields which we'll use in the dashboard
-cat $combined_json_file | jq '[.[] | {metadata:{id:.metadata.id, name:.metadata.name, web_url:.metadata.web_url}, nightly_user: .nightly_user, pipelines: (.pipelines|map({id:.id, status:.status, web_url:.web_url, created_at:.created_at})), pipeline_jobs:(.pipeline_jobs|to_entries|map({key:.key, value:{jobs:.value.jobs|map({id:.id, name:.name, status:.status, allow_failure:.allow_failure, web_url:.web_url})}})|from_entries)}]' -c > $combined_small_json_file
+cat $combined_json_file \
+    | jq -c '[.[] | {metadata:{id:.metadata.id, name:.metadata.name, web_url:.metadata.web_url}, issues:.issues, nightly_user: .nightly_user, pipelines: (.pipelines|map({id:.id, status:.status, web_url:.web_url, created_at:.created_at})), pipeline_jobs:(.pipeline_jobs|to_entries|map({key:.key, value:{jobs:.value.jobs|map({id:.id, name:.name, status:.status, allow_failure:.allow_failure, web_url:.web_url, started_at:.started_at})}})|from_entries)}]' \
+    > $combined_small_json_file
 echo "Wrote to $combined_small_json_file"
 
 rm $combined_json_file
