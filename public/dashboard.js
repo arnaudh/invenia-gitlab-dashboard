@@ -810,17 +810,26 @@ let table = document.getElementById('results-table');
 
 table.parentNode.classList.add("loading");
 
+// Explicitly fetch the .gz files and decompress in JavaScript.
+// This wouldn't be needed if the server respected the `accept-encoding: gzip`
+// header set by the browser and sent back the gz files to be decompressed by the browser,
+// but somehow that doesn't work. https://gitlab.invenia.ca/invenia/gitlab-dashboard/-/issues/8
 Promise.all([
-    fetch('combined_small.json'),
-    fetch('extracted_info.json'),
-    fetch('last_updated.json'),
+    fetch('combined_small.json.gz'),
+    fetch('extracted_info.json.gz'),
+    fetch('last_updated.json.gz'),
 ]).then(function (responses) {
     if (responses.some(r => r.status !== 200)) {
         throw 'fetching json failed (see dev console).';
     }
     // Get a JSON object from each of the responses
     return Promise.all(responses.map(function (response) {
-        return response.json();
+        return response.arrayBuffer().then(function(buffer) {
+            let gunzip = new Zlib.Gunzip(new Uint8Array(buffer));
+            let decompressed = gunzip.decompress();
+            let text = new TextDecoder().decode(decompressed);
+            return JSON.parse(text);
+        })
     }));
 }).then(function (data) {
     table.parentNode.classList.remove("loading");

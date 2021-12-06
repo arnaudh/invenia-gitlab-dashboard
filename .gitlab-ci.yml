@@ -11,6 +11,7 @@ stages:
   echo "$ci_init" > ci_init && source ci_init && rm ci_init
   install_awscli
   package_install jq
+  package_install gzip
 
 "Build dashboard":
   stage: build
@@ -19,6 +20,9 @@ stages:
   script:
     - ./download_pipelines_info.sh
     - ./find_patterns_in_logs.py
+    # Compress files for faster transfer to the browser (especially large JSON files).
+    - find public -type f -regex '.*\.\(json\|htm\|html\|txt\|text\|js\|css\)$' -exec sh -c 'gzip < $0 > $0.gz' {} \;
+    - ls -altrh public
   artifacts:
     paths:
     - public
