@@ -11,7 +11,7 @@ import sys
 patterns = [
     r'(Unsatisfiable requirements detected for package [^\s]+)',
     r'Got exception outside of a @test\s+(?:.*?nested task error: )?(.+?)\s+Stacktrace:',
-    r'Test Failed at.*?Expression: (.*?)\s+Stacktrace:',
+    r'Test (?:Failed at|threw exception).*?Expression: (.*?)\s+Stacktrace:',
     r'ERROR:.*?(UndefVarError: .*? not defined)',
     r'ERROR:.*?Job failed: (execution took longer than .*?) seconds',
     r'(received signal: KILL)',
