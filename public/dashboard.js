@@ -68,6 +68,14 @@ function add_days(date, days) {
     return result;
 }
 
+// Display dates from Winnipeg perspective, because the Dev team is primarily based in Winnipeg,
+// and also because "last night" more intuitively means "yesterday evening" vs "early this morning".
+// Nightly pipelines run at 8pm Winnipeg time, which is 1 or 2am UTC the next day.
+// Hence we display them as being the previous day relative to the UTC date.
+function display_date(UTC_date) {
+    return add_days(UTC_date, -1);
+}
+
 function date_without_time(date) {
     let res = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0);
     return res;
@@ -419,13 +427,13 @@ function render_dependencies_diff_full(dep_diff) {
 }
 
 function render_dependencies_markdown(dep_diff, previous_job) {
-    let previous_job_info = `job [${previous_job.id}](${previous_job.web_url}), ${previous_job.status}`;
+    let previous_job_info = `[previous day](${previous_job.web_url}) (${previous_job.status})`;
     let message = ``;
     if (dep_diff) {
         if (dep_diff.length === 0) {
-            message += `No dependency changes from previous day (${previous_job_info}).\n\n`;
+            message += `No dependency changes from the ${previous_job_info}.\n\n`;
         } else {
-            message += `Dependency changes from previous day (${previous_job_info}):\n\n`;
+            message += `Dependency changes from the ${previous_job_info}:\n\n`;
             diff_strings = dep_diff.map(function (obj) {
                 return render_dependency_change(obj.name, obj.old_version, obj.new_version, markdown=true);
             });
@@ -437,9 +445,9 @@ function render_dependencies_markdown(dep_diff, previous_job) {
 
 function new_issue_url(project, job, previous_job, patterns_to_actually_show, dep_diff) {
     let title = ``; // Better force user to choose an appropriate title
-    let job_start_date = job.started_at ? " on " + new Date(job.started_at).toISOString().slice(0, 10) : "";
+    let job_start_date = job.started_at ? " on " + display_date(new Date(job.started_at)).toISOString().slice(0, 10) : "";
     let description = `/label ~nightly\n\n`;
-    description += `Nightly job [${job.id}](${job.web_url}) ${job.status}${job_start_date}.\n\n`;
+    description += `Nightly job  [\`${job.name}\`](${job.web_url}) ${job.status}${job_start_date}.\n\n`;
     if (patterns_to_actually_show.length > 0) {
         description += patterns_to_actually_show.map(p => "```\n" + p.matched_group + "\n```").join("\n");
         description += `\n\n`;
@@ -616,10 +624,7 @@ function render_dates_header(table, timeline_start) {
     // Days row
     let days_row = dates_header.insertRow();
     let dates_utc = dates_since(timeline_start);
-    // Show days as being the previous one.
-    // Nightly pipelines run at 8pm Winnipeg time, which is ~2am UTC,
-    // hence we subtract 1 day for display purposes
-    let dates = dates_utc.map(d => add_days(d, -1));
+    let dates = dates_utc.map(display_date);
     let today = dates.pop();
     let first_date = true;
     for (let date of dates){
