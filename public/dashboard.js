@@ -242,6 +242,10 @@ function render_pipeline(pipeline, previous_pipeline, project) {
     return cellValue;
 }
 
+function remove_python_error_prefix(s) {
+    return s.replace(/E\s+/g, '')
+}
+
 function limit_string(s, length) {
     return s.length > length ? s.substring(0, length - 3) + "…" : s;
 }
@@ -554,7 +558,7 @@ function render_job(job, previous_job, project) {
                 for (let pattern of patterns_to_actually_show) {
                     html += `<li>`;
                     html += `<span class="tooltip error-message">`;
-                    html += limit_string(escapeHtml(pattern.matched_group), length=ERROR_STRING_DISPLAY_LIMIT);
+                    html += limit_string(remove_python_error_prefix(escapeHtml(pattern.matched_group)), length=ERROR_STRING_DISPLAY_LIMIT);
                     html += `</span>`;
                     html += `</li>`;
                 }
