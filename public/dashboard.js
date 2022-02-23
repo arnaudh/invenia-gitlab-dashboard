@@ -242,6 +242,10 @@ function render_pipeline(pipeline, previous_pipeline, project) {
     return cellValue;
 }
 
+function remove_python_error_prefix(s) {
+    return s.replace(/E\s+/g, '')
+}
+
 function limit_string(s, length) {
     return s.length > length ? s.substring(0, length - 3) + "…" : s;
 }
@@ -458,6 +462,12 @@ function new_issue_url(project, job, previous_job, patterns_to_actually_show, de
     return `${project.metadata.web_url}/-/issues/new?issue[title]=${encodeURIComponent(title)}&issue[description]=${encodeURIComponent(description)}`;
 }
 
+function escapeHtml(html){
+    let text = document.createTextNode(html);
+    let p = document.createElement('p');
+    p.appendChild(text);
+    return p.innerHTML;
+}
 
 function render_job(job, previous_job, project) {
     let state = window.history.state;
@@ -519,7 +529,7 @@ function render_job(job, previous_job, project) {
                     //    given width.
                     // This makes things more readable for either case.
                     let html_tag = pattern.matched_group.includes("\n") ? 'pre' : 'div';
-                    html += `<${html_tag} class="error-message">${pattern.matched_group}</${html_tag}>`;
+                    html += `<${html_tag} class="error-message">${escapeHtml(pattern.matched_group)}</${html_tag}>`;
                     html += `</li>`;
                 }
                 html += `</ul>`;
@@ -548,7 +558,7 @@ function render_job(job, previous_job, project) {
                 for (let pattern of patterns_to_actually_show) {
                     html += `<li>`;
                     html += `<span class="tooltip error-message">`;
-                    html += limit_string(pattern.matched_group, length=ERROR_STRING_DISPLAY_LIMIT);
+                    html += limit_string(remove_python_error_prefix(escapeHtml(pattern.matched_group)), length=ERROR_STRING_DISPLAY_LIMIT);
                     html += `</span>`;
                     html += `</li>`;
                 }

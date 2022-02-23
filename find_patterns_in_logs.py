@@ -27,7 +27,7 @@ patterns = [
     r'Error response from daemon: (.+?) section_end', # aws ecr get-login
     r'(mv: cannot move .+? No such file or directory)',
     r'JULIA: (.*?Error: .+?)\s+Stacktrace', # PyJulia
-    r'\nE\s+([^\n]+)', # Python error
+    r'\n((E\s+[^\n]+\n)+)', # Python error (Capturing the "E" prefix because it is there on every line for multiline errors)
 ]
 
 # Try the above patterns first, if no matches try the ones below (may be less informative or more verbose)
