@@ -132,7 +132,8 @@ for i in "${!project_ids[@]}"; do
         if [[ $first_iteration_inner_loop = true ]]; then first_iteration_inner_loop=false; else echo "," >> $combined_json_file; fi
 
         mkdir -p responses/projects/$project_id/pipelines/by_id/$pipeline_id/
-        curl_wrapper -H "Private-Token: $GITLAB_ACCESS_TOKEN" "https://gitlab.invenia.ca/api/v4/projects/$project_id/pipelines/$pipeline_id/jobs" > responses/projects/$project_id/pipelines/by_id/$pipeline_id/jobs.json
+        # Assumes max 100 jobs per pipeline (otherwise we'd need to paginate because can't go higher than 100 per page)
+        curl_wrapper -H "Private-Token: $GITLAB_ACCESS_TOKEN" "https://gitlab.invenia.ca/api/v4/projects/$project_id/pipelines/$pipeline_id/jobs?per_page=100" > responses/projects/$project_id/pipelines/by_id/$pipeline_id/jobs.json
         
         echo "\"$pipeline_id\":{" >> $combined_json_file
         echo '"jobs":' >> $combined_json_file
