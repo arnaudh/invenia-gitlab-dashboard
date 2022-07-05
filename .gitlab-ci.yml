@@ -26,6 +26,9 @@ stages:
   artifacts:
     paths:
     - public
+  retry:
+    max: 2
+    when: runner_system_failure
 
 pages:
   stage: deploy
