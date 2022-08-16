@@ -196,7 +196,7 @@ echo "Wrote to $combined_json_file"
 
 # Selecting only fields which we'll use in the dashboard
 cat $combined_json_file \
-    | jq -c '[.[] | {metadata:{id:.metadata.id, name:.metadata.name, web_url:.metadata.web_url}, issues:.issues, nightly_user: .nightly_user, pipelines: (.pipelines|map({id:.id, status:.status, web_url:.web_url, created_at:.created_at})), pipeline_jobs:(.pipeline_jobs|to_entries|map({key:.key, value:{jobs:.value.jobs|map({id:.id, name:.name, status:.status, allow_failure:.allow_failure, web_url:.web_url, started_at:.started_at})}})|from_entries)}]' \
+    | jq -c '[.[] | {metadata:{id:.metadata.id, name:.metadata.name, web_url:.metadata.web_url}, issues:.issues, nightly_user: .nightly_user, pipelines: (.pipelines|map({id:.id, status:.status, web_url:.web_url, created_at:.created_at})), pipeline_jobs:(.pipeline_jobs|to_entries|map({key:.key, value:{jobs:.value.jobs|map({id:.id, name:.name, status:.status, allow_failure:.allow_failure, web_url:.web_url, started_at:.started_at, runner:{id:.runner.id, description:.runner.description}})}})|from_entries)}]' \
     > $combined_small_json_file
 echo "Wrote to $combined_small_json_file"
 

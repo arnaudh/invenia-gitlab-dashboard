@@ -5,6 +5,7 @@ const DEFAULTS = {
     "display_job_names": true,
     "display_errors": true,
     "display_dependencies": false,
+    "display_runner": false,
     "display_jobs_failed": true,
     "display_jobs_failed_allow_failure": false,
     "display_jobs_passed": false,
@@ -227,7 +228,7 @@ function render_pipeline(pipeline, previous_pipeline, project) {
             job.status == "success" && state.display_jobs_passed ||
             !["success", "failed"].includes(job.status) && state.display_jobs_other;
     });
-    if (jobs_to_show.length > 0 && (state.display_job_names || state.display_errors || state.display_dependencies)) {
+    if (jobs_to_show.length > 0 && (state.display_job_names || state.display_errors || state.display_dependencies || state.display_runner)) {
         cellValue = `<table class="pipeline-jobs">`;
         cellValue += jobs_to_show.map(function(job) {
             let previous_pipeline_job = pipeline_job_by_name(previous_pipeline, job.name, project);
@@ -511,6 +512,12 @@ function render_job(job, previous_job, project) {
             html += `<span><span class="tooltiptext">`;
             html += job.name;
             html += `<a href="${new_issue_url(project, job, previous_job, patterns_to_actually_show, dep_diff)}" target="_blank" class="new-issue">New issue</a>`;
+            html += `<h3>Runner:</h3>`;
+            if (job.runner) {
+                html += `${job.runner.description} (<a href="https://gitlab.invenia.ca/admin/runners/${job.runner.id}">#${job.runner.id}</a>)`
+            } else {
+                html += "<i>No runner info</i>";
+            }
             html += `<h3>Error messages detected:</h3>`;
             // Only show "backup" errors if there are no normal ones
             if (patterns_to_actually_show.length === 0) {
@@ -578,6 +585,11 @@ function render_job(job, previous_job, project) {
             }
             html += `</td>`;
         }
+        if (state.display_runner) {
+            html += `<td class="runner-name">`;
+            html += shorten_runner_name(job.runner)
+            html += `</td>`;
+        }
         html += `</tr>`;
     } else {
         html = '';
@@ -615,7 +627,7 @@ function emojize(text) {
 
 function shorten_job_name(text) {
     let no_punctuation = text.replaceAll(/[(),]/gi, '');
-    let words = no_punctuation.split(' ')
+    let words = no_punctuation.split(' ');
     let words_shortened = words.map(function (word) {
         let emojized = emojize(word);
         if (emojized !== word) { // word has been emojized
@@ -627,6 +639,15 @@ function shorten_job_name(text) {
         }
     });
     return words_shortened.join('');
+}
+
+function shorten_runner_name(runner) {
+    let words = runner.description.split('-');
+    let words_shortened = words.map(function (word) {
+        let abbreviated = word.replaceAll(/([a-zA-Z_.-]{1})[a-zA-Z_.-]*/gi, '$1');
+        return abbreviated;
+    });
+    return words_shortened.join('-') + `#${runner.id}`;
 }
 
 function render_dates_header(table, timeline_start) {
@@ -764,6 +785,7 @@ function update_state_from_url() {
         "search": search_params.get('search') || DEFAULTS['search'],
         "display_errors": parse_boolean(search_params.get('display_errors'), DEFAULTS['display_errors']),
         "display_dependencies": parse_boolean(search_params.get('display_dependencies'), DEFAULTS['display_dependencies']),
+        "display_runner": parse_boolean(search_params.get('display_runner'), DEFAULTS['display_runner']),
         "display_job_names": parse_boolean(search_params.get('display_job_names'), DEFAULTS['display_job_names']),
         "display_jobs_failed": parse_boolean(search_params.get('display_jobs_failed'), DEFAULTS['display_jobs_failed']),
         "display_jobs_failed_allow_failure": parse_boolean(search_params.get('display_jobs_failed_allow_failure'), DEFAULTS['display_jobs_failed_allow_failure']),
@@ -782,6 +804,7 @@ function update_state_from_user_inputs() {
         search: document.querySelector('#search').value,
         display_errors: document.querySelector('#display-errors').checked,
         display_dependencies: document.querySelector('#display-dependencies').checked,
+        display_runner: document.querySelector('#display-runner').checked,
         display_job_names: document.querySelector('#display-job-names').checked,
         display_jobs_failed: document.querySelector('#display-jobs-failed').checked,
         display_jobs_failed_allow_failure: document.querySelector('#display-jobs-failed-allow-failure').checked,
@@ -806,6 +829,7 @@ function update_user_inputs_from_state() {
     document.getElementById(`search`).value = state.search;
     document.getElementById(`display-errors`).checked = state.display_errors;
     document.getElementById(`display-dependencies`).checked = state.display_dependencies;
+    document.getElementById(`display-runner`).checked = state.display_runner;
     document.getElementById(`display-job-names`).checked = state.display_job_names;
     document.getElementById(`display-jobs-failed`).checked = state.display_jobs_failed;
     document.getElementById(`display-jobs-failed-allow-failure`).checked = state.display_jobs_failed_allow_failure;
@@ -850,6 +874,7 @@ Promise.all([
     table.parentNode.classList.remove("loading");
     projects = data[0];
     projects_dict = Object.assign({}, ...projects.map(p => ({[p.metadata.name]: p})));
+    console.log(projects_dict);
     extracted_info = data[1];
     last_updated = new Date(data[2]);
     if (!isSameDay(get_newest_pipeline_date(projects), Date.now())) {
