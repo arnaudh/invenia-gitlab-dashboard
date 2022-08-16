@@ -26,6 +26,10 @@ stages:
   artifacts:
     paths:
     - public
+    # Link to the dashboard in the MR.
+    # Unfortunately can't directly link to the index.html yet
+    # https://gitlab.com/gitlab-org/gitlab/-/issues/220103
+    expose_as: Dashboard
   retry:
     max: 2
     when: runner_system_failure
