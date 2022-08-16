@@ -587,7 +587,9 @@ function render_job(job, previous_job, project) {
         }
         if (state.display_runner) {
             html += `<td class="runner-name">`;
-            html += shorten_runner_name(job.runner)
+            if (job.runner) {
+                html += shorten_runner_name(job.runner);
+            }
             html += `</td>`;
         }
         html += `</tr>`;
