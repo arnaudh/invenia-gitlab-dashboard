@@ -876,7 +876,6 @@ Promise.all([
     table.parentNode.classList.remove("loading");
     projects = data[0];
     projects_dict = Object.assign({}, ...projects.map(p => ({[p.metadata.name]: p})));
-    console.log(projects_dict);
     extracted_info = data[1];
     last_updated = new Date(data[2]);
     if (!isSameDay(get_newest_pipeline_date(projects), Date.now())) {
