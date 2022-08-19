@@ -33,15 +33,19 @@
     <span class="form-line">Display:
         <span>
             <input type="checkbox" id="display-job-names" name="display-job-names" onchange="update_state_from_user_inputs()">
-            <label for="display-job-names">job names</label>
+            <label for="display-job-names">job name</label>
         </span>
         <span>
             <input type="checkbox" id="display-errors" name="display-errors" onchange="update_state_from_user_inputs()">
-            <label for="display-errors">error messages</label>
+            <label for="display-errors">errors</label>
         </span>
         <span>
             <input type="checkbox" id="display-dependencies" name="display-dependencies" onchange="update_state_from_user_inputs()">
             <label for="display-dependencies">dependencies</label>
+        </span>
+        <span>
+            <input type="checkbox" id="display-runner" name="display-runner" onchange="update_state_from_user_inputs()">
+            <label for="display-runner">runner</label>
         </span>
     </span>
     <span class="form-line">| Job status:
