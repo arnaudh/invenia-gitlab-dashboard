@@ -474,29 +474,35 @@ function render_job(job, previous_job, project) {
     let state = window.history.state;
     let search_filter = state.search;
     let all_patterns = extracted_info[project.metadata.id] && extracted_info[project.metadata.id][job.id] && extracted_info[project.metadata.id][job.id]["error_messages"] || [];
-    let patterns_deduplicated = remove_duplicates(all_patterns, ["matched_group"]); // remove addition patterns that have the same matched_group
+    let patterns_deduplicated = remove_duplicates(all_patterns, ["matched_group"]); // remove additional patterns that have the same matched_group
     let dependencies = extracted_info[project.metadata.id] && extracted_info[project.metadata.id][job.id] && extracted_info[project.metadata.id][job.id]["dependencies"] || [];
     let dependencies_previous_job = previous_job && extracted_info[project.metadata.id] && extracted_info[project.metadata.id][previous_job.id] && extracted_info[project.metadata.id][previous_job.id]["dependencies"] || [];
 
-    let show_job;
-    let patterns_to_show;
+    // Only show "backup" errors if there are no normal ones (backup errors are kind of
+    // catch-all; less informative or more verbose). This is to show only the likely most
+    // useful messages for each failed job. However this is not ideal, since a job can fail
+    // with non-backup errors another day, in which case the backup errors will not be
+    // displayed, which makes it look like some errors (the backup ones) that were there
+    // before are now gone.
+    let patterns_normal = patterns_deduplicated.filter(p => p.pattern_type == "normal");
+    let patterns_backup = patterns_deduplicated.filter(p => p.pattern_type == "backup");
+    let patterns_pre_filter = (patterns_normal.length > 0) ? patterns_normal : patterns_backup;
 
+    let show_job;
+    let patterns_filtered;
     if (search_filter === "") {
         show_job = true;
-        patterns_to_show = patterns_deduplicated;
+        patterns_filtered = patterns_pre_filter;
     } else {
-        let errors_matching_filter = patterns_deduplicated.filter(p => string_matches_filter(p.matched_group, search_filter));
+        let errors_matching_filter = patterns_pre_filter.filter(p => string_matches_filter(p.matched_group, search_filter));
         if (errors_matching_filter.length > 0) {
             show_job = true;
-            patterns_to_show = errors_matching_filter;
+            patterns_filtered = errors_matching_filter;
         } else {
             show_job = string_matches_filter(job.name, search_filter);
-            patterns_to_show = patterns_deduplicated;
+            patterns_filtered = patterns_pre_filter;
         }
     }
-    let patterns_normal = patterns_to_show.filter(p => p.pattern_type == "normal");
-    let patterns_backup = patterns_to_show.filter(p => p.pattern_type == "backup");
-    let patterns_to_actually_show = (patterns_normal.length > 0) ? patterns_normal : patterns_backup;
 
     let html;
     if (show_job) {
@@ -511,7 +517,7 @@ function render_job(job, previous_job, project) {
             // Tooltip
             html += `<span><span class="tooltiptext">`;
             html += job.name;
-            html += `<a href="${new_issue_url(project, job, previous_job, patterns_to_actually_show, dep_diff)}" target="_blank" class="new-issue">New issue</a>`;
+            html += `<a href="${new_issue_url(project, job, previous_job, patterns_pre_filter, dep_diff)}" target="_blank" class="new-issue">New issue</a>`;
             html += `<h3>Runner:</h3>`;
             if (job.runner) {
                 html += `${job.runner.description} (<a href="https://gitlab.invenia.ca/admin/runners/${job.runner.id}">#${job.runner.id}</a>)`
@@ -519,12 +525,11 @@ function render_job(job, previous_job, project) {
                 html += "<i>No runner info</i>";
             }
             html += `<h3>Error messages detected:</h3>`;
-            // Only show "backup" errors if there are no normal ones
-            if (patterns_to_actually_show.length === 0) {
+            if (patterns_pre_filter.length === 0) {
                 html += `<i>No known error pattern was found. You can add patterns <a href="https://gitlab.invenia.ca/invenia/gitlab-dashboard/-/blob/master/find_patterns_in_logs.py" target="_blank">here</a>.</i>`;
             } else {
                 html += `<ul>`;
-                for (let pattern of patterns_to_actually_show) {
+                for (let pattern of patterns_pre_filter) {
                     html += `<li>`;
                     // The tooltip has a hardcoded width (see CSS).
                     // What if the error message is too long to fit in the given width?
@@ -560,9 +565,7 @@ function render_job(job, previous_job, project) {
                 html += `</span>`;
                 html += `</li>`;
             } else {
-                // Only show "backup" errors if there are no normal ones
-                let patterns_to_actually_show = (patterns_normal.length > 0) ? patterns_normal : patterns_backup;
-                for (let pattern of patterns_to_actually_show) {
+                for (let pattern of patterns_filtered) {
                     html += `<li>`;
                     html += `<span class="tooltip error-message">`;
                     html += limit_string(remove_python_error_prefix(escapeHtml(pattern.matched_group)), length=ERROR_STRING_DISPLAY_LIMIT);
