@@ -25,7 +25,7 @@ stages:
     - ls -altrh public
   artifacts:
     paths:
-    - ["public/index.html"]
+    - public/
     # Link to the dashboard in the MR.
     # Unfortunately can't directly link to the index.html yet
     # https://gitlab.com/gitlab-org/gitlab/-/issues/220103
