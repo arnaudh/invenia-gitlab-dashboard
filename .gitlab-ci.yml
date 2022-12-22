@@ -21,6 +21,7 @@ stages:
     - ./download_pipelines_info.sh
     - ./find_patterns_in_logs.py
     # Compress files for faster transfer to the browser (especially large JSON files).
+    # Alternatively on Mac: cd public && gzip -kfv *.json
     - find public -type f -regex '.*\.\(json\|htm\|html\|txt\|text\|js\|css\)$' -exec sh -c 'gzip < $0 > $0.gz' {} \;
     - ls -altrh public
   artifacts:

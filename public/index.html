@@ -15,14 +15,14 @@
     <h2>Nightly failures</h2>
 
     <span class="switch-field form-line">
-        <input type="radio" id="nightly-all" name="nightly" value="all" onchange="update_state_from_user_inputs()">
-        <label for="nightly-all">All</label>
+        <input type="radio" id="repos-all" name="repos" value="all" onchange="update_state_from_user_inputs()">
+        <label for="repos-all">All</label>
 
-        <input type="radio" id="nightly-dev" name="nightly" value="dev" onchange="update_state_from_user_inputs()">
-        <label for="nightly-dev"><img src="images/nightly-dev.jpg" class="avatar"/> DEV</label>
+        <input type="radio" id="repos-prod" name="repos" value="prod" onchange="update_state_from_user_inputs()">
+        <label for="repos-prod">prod</label>
 
-        <input type="radio" id="nightly-rse" name="nightly" value="rse" onchange="update_state_from_user_inputs()">
-        <label for="nightly-rse"><img src="images/nightly-rse.png" class="avatar"/> RSE</label>
+        <input type="radio" id="repos-non-prod" name="repos" value="non-prod" onchange="update_state_from_user_inputs()">
+        <label for="repos-non-prod">non-prod</label>
     </span>
     <span class="search-container form-line">
         <input type="text" id="search" name="search" onchange="update_state_from_user_inputs()" placeholder="Filter by job name or error message">

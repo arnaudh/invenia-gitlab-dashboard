@@ -1,6 +1,6 @@
 
 const DEFAULTS = {
-    "nightly": "all", // nightly user
+    "repos": "all",
     "search": "", // search filter
     "display_job_names": true,
     "display_errors": true,
@@ -15,16 +15,6 @@ const DEFAULTS = {
 // Would need to modify the download script to go further back
 DAYS_AGO=29;
 
-const USERS_INFO = {
-    "nightly-rse": {
-        "name": "White Horse",
-        "avatar": "images/nightly-rse.png"
-    },
-    "nightly-dev": {
-        "name": "Dark Horse",
-        "avatar": "images/nightly-dev.jpg"
-    },
-}
 const JOB_STRING_DISPLAY_LIMIT = 1000;
 const ERROR_STRING_DISPLAY_LIMIT = 10;
 
@@ -32,6 +22,7 @@ let projects;
 let projects_dict;
 let extracted_info;
 let last_updated;
+let eis_dependencies;
 
 //=================================
 //      Utility functions
@@ -177,6 +168,10 @@ function time_since(date) {
         return Math.floor(interval) + " min";
     }
     return Math.floor(seconds) + " s";
+}
+
+function is_in_prod(project) {
+    return eis_dependencies.includes(project.metadata.name.replace(/\.jl$/, ""))
 }
 
 //=================================
@@ -690,10 +685,13 @@ function render_project_issues(issues) {
 }
 
 function render_project_info(project) {
-    return `
+    html = `
         <span class="project-info">
-        <span class="tooltip">
-            <img src="${USERS_INFO[project.nightly_user].avatar}" class="avatar"/>
+        <span class="tooltip">`;
+    if (is_in_prod(project)) {
+        html += `<span class="prod">prod</span>`;
+    }
+    html += `
             <a href="${project.metadata.web_url}" target="_blank">${project.metadata.name}</a>
             <span class="tooltiptext">
                 <div>
@@ -706,6 +704,7 @@ function render_project_info(project) {
             </span>
         </span>
         </span>`;
+    return html;
 }
 
 function render_project_pipelines() {
@@ -728,7 +727,9 @@ function render_project_pipelines() {
         if (!has_pipelines_after_date(project, timeline_start)) {
             continue;
         }
-        if (state.nightly !== "all"  && project.nightly_user !== `nightly-${state.nightly}`) {
+        let is_prod = eis_dependencies.includes(project.metadata.name.replace(/\.jl$/, ""));
+        if (state.repos == "prod" && !is_in_prod(project) ||
+            state.repos == "non-prod" && is_in_prod(project) ) {
             continue;
         }
 
@@ -786,7 +787,7 @@ function parse_boolean(str, default_value) {
 function update_state_from_url() {
     let search_params = new URLSearchParams(window.location.search);
     let state = {
-        "nightly": search_params.get('nightly') || DEFAULTS['nightly'],
+        "repos": search_params.get('repos') || DEFAULTS['repos'],
         "search": search_params.get('search') || DEFAULTS['search'],
         "display_errors": parse_boolean(search_params.get('display_errors'), DEFAULTS['display_errors']),
         "display_dependencies": parse_boolean(search_params.get('display_dependencies'), DEFAULTS['display_dependencies']),
@@ -805,7 +806,7 @@ function update_state_from_url() {
 
 function update_state_from_user_inputs() {
     let state = {
-        nightly: document.querySelector('input[name="nightly"]:checked').value,
+        repos: document.querySelector('input[name="repos"]:checked').value,
         search: document.querySelector('#search').value,
         display_errors: document.querySelector('#display-errors').checked,
         display_dependencies: document.querySelector('#display-dependencies').checked,
@@ -830,7 +831,7 @@ window.onpopstate = function(event) {
 
 function update_user_inputs_from_state() {
     let state = window.history.state;
-    document.getElementById(`nightly-${state.nightly}`).checked = true;
+    document.getElementById(`repos-${state.repos}`).checked = true;
     document.getElementById(`search`).value = state.search;
     document.getElementById(`display-errors`).checked = state.display_errors;
     document.getElementById(`display-dependencies`).checked = state.display_dependencies;
@@ -862,6 +863,7 @@ Promise.all([
     fetch('combined_small.json.gz'),
     fetch('extracted_info.json.gz'),
     fetch('last_updated.json.gz'),
+    fetch('eis_dependencies.json.gz'),
 ]).then(function (responses) {
     if (responses.some(r => r.status !== 200)) {
         throw 'fetching json failed (see dev console).';
@@ -881,6 +883,7 @@ Promise.all([
     projects_dict = Object.assign({}, ...projects.map(p => ({[p.metadata.name]: p})));
     extracted_info = data[1];
     last_updated = new Date(data[2]);
+    eis_dependencies = data[3];
     if (!isSameDay(get_newest_pipeline_date(projects), Date.now())) {
         show_error(`WARNING: pipelines for the most recent day(s) are missing. This is likely due to a dashboard build failure (see <a href="https://gitlab.invenia.ca/invenia/gitlab-dashboard/-/pipelines">here</a>).`);
     }
