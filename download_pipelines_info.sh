@@ -42,7 +42,7 @@ list_eis_dependencies() {
     echo "Listing EIS dependencies from the Manifest.toml"
     eis_dir=$(mktemp -d)
     # Shallow clone + checkout only Manifest.toml to avoid downloading the whole eis repo
-    git clone -n --depth 1 git@gitlab.invenia.ca:invenia/eis.git "$eis_dir"
+    git clone -n --depth 1 https://oauth2:$GITLAB_ACCESS_TOKEN@gitlab.invenia.ca/invenia/eis.git "$eis_dir"
     git -C "$eis_dir" checkout HEAD "docker/build/Manifest.toml"
     cat "$eis_dir/docker/build/Manifest.toml" \
         | perl -lne '/\[\[(.*)\]\]/ and print $1' \
