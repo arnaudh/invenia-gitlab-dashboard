@@ -355,7 +355,12 @@ table .dashboard-error-message a {
 }
 
 
-
+.prod {
+  background-color: black;
+  color: #fff;
+  border-radius: 2px;
+  padding: 0px 2px;
+}
 
 .tooltip:hover .tooltiptext {
   /*visibility: visible;*/

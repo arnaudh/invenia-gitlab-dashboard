@@ -38,6 +38,20 @@ curl_wrapper() {
     echo "$output" # quotes are important, otherwise newlines will be removed
 }
 
+list_eis_dependencies() {
+    echo "Listing EIS dependencies from the Manifest.toml"
+    eis_dir=$(mktemp -d)
+    # Shallow clone + checkout only Manifest.toml to avoid downloading the whole eis repo
+    git clone -n --depth 1 https://oauth2:$GITLAB_ACCESS_TOKEN@gitlab.invenia.ca/invenia/eis.git "$eis_dir"
+    git -C "$eis_dir" checkout HEAD "docker/build/Manifest.toml"
+    cat "$eis_dir/docker/build/Manifest.toml" \
+        | perl -lne '/\[\[(.*)\]\]/ and print $1' \
+        | jq -R . | jq -s . \
+        > public/eis_dependencies.json
+    echo "Wrote EIS dependencies to public/eis_dependencies.json"
+}
+
+list_eis_dependencies
 
 download_project_list() {
     echo "Downloading project list"
@@ -119,7 +133,7 @@ for i in "${!project_ids[@]}"; do
 
     echo "pipeline_ids: [$pipeline_ids]"
     if [[ -z "$pipeline_ids" ]]; then
-        echo "WARN: no pipelines for project_id=$project_id"
+        echo "WARN: no nightly pipelines for project_id=$project_id"
         echo '}' >> $combined_json_file # pipeline_jobs
         echo '}' >> $combined_json_file # project
         continue
