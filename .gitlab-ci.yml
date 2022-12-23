@@ -10,6 +10,7 @@ stages:
   |
   echo "$ci_init" > ci_init && source ci_init && rm ci_init
   install_awscli
+  package_install git
   package_install jq
   package_install gzip
 
