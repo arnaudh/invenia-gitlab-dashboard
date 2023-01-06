@@ -13,8 +13,8 @@ patterns = [
     r'(Unsatisfiable requirements detected for package [^\s]+)',
     r'Got exception outside of a @test\s+(?:.*?nested task error: )?(.+?)\s+Stacktrace:',
     r'Test (?:Failed at|threw exception).*?Expression: (.*?)\s+Stacktrace:',
-    r'ERROR:.*?(UndefVarError: .*? not defined)',
-    r'ERROR:.*?Job failed: (execution took longer than .*?) seconds',
+    r'(UndefVarError: .*? not defined)',
+    r'Job failed: (execution took longer than .*?) seconds',
     r'(received signal: KILL)',
     r'(Killed: 9)',
     r'ERROR: (Requested .+? from .+? has different version in metadata: \'.*?\')',
@@ -34,7 +34,9 @@ patterns = [
 # Try the above patterns first, if no matches try the ones below (may be less informative or more verbose)
 backup_patterns = [
     r'([Cc]ommand (".+?"|\'.+?\') failed with (exit status|error code) \d+)',
-    r'ERROR:(?: LoadError:)? (.+?)\s+Stacktrace:', # Generic julia error
+    # Generic julia error. Limitting the number of characters matched so as not to make the
+    # regex runtime blow up (can take seconds to run otherwise)
+    r'ERROR:(?: LoadError:)? (.{1,10000}?)\s+Stacktrace:',
 ]
 
 ignore_patterns = [
@@ -102,7 +104,9 @@ def find_pattern_occurences(pattern, text, pattern_type):
 # The dependencies we care about are the ones showing in the Manifest.toml section.
 # Sometimes dependencies show up with a +:
 #   [1c724243] + AWSS3 v0.9.2
-test_section_regex = r" Testing (?P<package_name>.*?)\n.*?\/Manifest.toml`\n(?P<dep_list>.*?)Precompiling project"
+# TODO Fix for e.g. https://gitlab.invenia.ca/invenia/ForecastMerging.jl/-/jobs/2017749
+# https://gitlab.invenia.ca/invenia/gitlab-dashboard/-/issues/17
+test_section_regex = r" Testing (?P<package_name>[^\n]?)\n.*?\/Manifest.toml`\n(?P<dep_list>.*?)Precompiling project"
 dependency_regex = r"\[(?P<uuid_short>.*?)\](?: \+)? (?P<name>.*?) (?P<version>.*?)\n"
 
 # https://stackoverflow.com/questions/14693701/how-can-i-remove-the-ansi-escape-sequences-from-a-string-in-python
