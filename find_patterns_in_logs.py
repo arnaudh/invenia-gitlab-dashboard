@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from datetime import datetime
 import json
 import glob
 from pathlib import Path
@@ -77,7 +78,7 @@ def find_pattern_occurences(pattern, text, pattern_type):
             # "_log_url": f"https://gitlab.invenia.ca/{projects[project_id]['path_with_namespace']}/-/jobs/{job_id}"
         }
         results.append(match_result)
-        # print("MATCH", match_result)
+        # print(datetime.now(), "MATCH", match_result)
     return results
 
 # Dependences are printed in the logs when running tests for a given package, e.g.:
@@ -112,12 +113,12 @@ def remove_ansi_escapes(text):
 def get_manifest_test_dependencies(clean_text):
     match = re.search(test_section_regex, clean_text, flags=re.DOTALL)
     if match is None:
-        print("text did not match test_section_regex")
+        print(datetime.now(), "text did not match test_section_regex")
         return []
 
     matches = re.findall(dependency_regex, match.group("dep_list"))
     if len(matches) == 0:
-        print("no deps found matching dependency_regex")
+        print(datetime.now(), "no deps found matching dependency_regex")
         sys.exit(1)
 
     dependencies = []
@@ -136,19 +137,19 @@ paths = list(Path('responses').rglob('trace'))
 for i, path in enumerate(paths):
     match = re.match(r'responses/projects/(\d+)/jobs/(\d+)/trace', str(path))
     if match is None:
-        print("Path is not as expected")
+        print(datetime.now(), "Path is not as expected")
         sys.exit(1)
     project_id = int(match.group(1))
     job_id = int(match.group(2))
 
-    print(f"[{i+1}/{len(paths)}] Project name: {projects[project_id]['path_with_namespace']}, project_id: {project_id}, job_id: {job_id}")
+    print(datetime.now(), f"[{i+1}/{len(paths)}] Project name: {projects[project_id]['path_with_namespace']}, project_id: {project_id}, job_id: {job_id}")
 
     with open(path, 'r') as f:
         text = remove_ansi_escapes(f.read())
 
-        print("path", path)
+        print(datetime.now(), "path", path)
         dependencies = get_manifest_test_dependencies(text)
-        print(f"Found {len(dependencies)} dependencies in {path}")
+        print(datetime.now(), f"Found {len(dependencies)} dependencies in {path}")
 
         error_messages = []
         for pattern in patterns:
@@ -157,7 +158,7 @@ for i, path in enumerate(paths):
             error_messages.extend(find_pattern_occurences(pattern, text, "backup"))
         # Discard unuseful patterns
         error_messages = [e for e in error_messages if not any([re.search(p, e["matched_group"]) for p in ignore_patterns])]
-        print(f"Found {len(error_messages)} error(s) in {path}")
+        print(datetime.now(), f"Found {len(error_messages)} error(s) in {path}")
 
         if len(dependencies) > 0 or len(error_messages) > 0:
             if project_id not in extracted_info:
@@ -170,7 +171,7 @@ for i, path in enumerate(paths):
 def save_to_file(obj, output_file):
     with open(output_file, 'w') as f:
         json.dump(obj, f)
-        print(f"Wrote to {output_file}")
+        print(datetime.now(), f"Wrote to {output_file}")
 
 save_to_file(extracted_info, 'public/extracted_info.json')
 

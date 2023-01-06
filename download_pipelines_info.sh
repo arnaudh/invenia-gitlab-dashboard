@@ -13,10 +13,14 @@ jq --version
 #   export GITLAB_ACCESS_TOKEN=<token>
 #   ./download_pipelines_info.sh
 
+echo_date() {
+    echo "[$(date -u '+%Y-%m-%d %H:%M:%S')] $@"
+}
+
 MAX_N_PROJECTS=100000
 MAX_N_PIPELINES=30
-echo "MAX_N_PROJECTS=$MAX_N_PROJECTS"
-echo "MAX_N_PIPELINES=$MAX_N_PIPELINES"
+echo_date "MAX_N_PROJECTS=$MAX_N_PROJECTS"
+echo_date "MAX_N_PIPELINES=$MAX_N_PIPELINES"
 
 mkdir -p responses/projects/
 
@@ -34,12 +38,12 @@ curl_wrapper() {
             exit 1
         fi
     fi
-    # echo "NO ERROR" >&2
+    # echo_date "NO ERROR" >&2
     echo "$output" # quotes are important, otherwise newlines will be removed
 }
 
 list_eis_dependencies() {
-    echo "Listing EIS dependencies from the Manifest.toml"
+    echo_date "Listing EIS dependencies from the Manifest.toml"
     eis_dir=$(mktemp -d)
     # Shallow clone + checkout only Manifest.toml to avoid downloading the whole eis repo
     git clone -n --depth 1 https://oauth2:$GITLAB_ACCESS_TOKEN@gitlab.invenia.ca/invenia/eis.git "$eis_dir"
@@ -48,22 +52,22 @@ list_eis_dependencies() {
         | perl -lne '/\[\[(.*)\]\]/ and print $1' \
         | jq -R . | jq -s . \
         > public/eis_dependencies.json
-    echo "Wrote EIS dependencies to public/eis_dependencies.json"
+    echo_date "Wrote EIS dependencies to public/eis_dependencies.json"
 }
 
 list_eis_dependencies
 
 download_project_list() {
-    echo "Downloading project list"
+    echo_date "Downloading project list"
     project_query="https://gitlab.invenia.ca/api/v4/groups/invenia/projects?archived=false&include_subgroups=true&per_page=100"
     curl_wrapper --dump-header responses/projects/head -H "Private-Token: $GITLAB_ACCESS_TOKEN" "$project_query" > /dev/null
 
     # n_projects=$(cat responses/projects/head | grep X-Total: | sed 's/[^0-9]*//g')
     n_pages=$(cat responses/projects/head | grep X-Total-Pages: | sed 's/[^0-9]*//g')
-    echo "Total pages for project list: $n_pages"
+    echo_date "Total pages for project list: $n_pages"
 
     for (( page = 1; page <= $n_pages; page++ )); do
-        echo "page $page"
+        echo_date "page $page"
         curl_wrapper -H "Private-Token: $GITLAB_ACCESS_TOKEN" "$project_query&page=$page" > responses/projects/page_$page.json
     done
     # jq -s '.|flatten|length' responses/projects/*.json
@@ -71,7 +75,7 @@ download_project_list() {
 
 download_project_list
 
-echo "Downloading projects"
+echo_date "Downloading projects"
 
 project_ids=($(jq -s '[. | flatten | .[] | select(.archived==false)] | map(.id|tostring) | join(" ")' responses/projects/*.json -r))
 # project_ids=(241 460 353 201 473 508 533 536) # (BidFiles.jl GLMForecasters.jl GPForecasters.jl S3DB.jl Backruns.jl Features.jl GLMModels.jl<rse> WrapperModels.jl<rse>)
@@ -90,7 +94,7 @@ first_iteration=true
 # for project_id in ${project_ids[@]}; do
 for i in "${!project_ids[@]}"; do
     project_id="${project_ids[$i]}"
-    echo "Downloading info for project $project_id [$((i+1))/${#project_ids[@]}]"
+    echo_date "Downloading info for project $project_id [$((i+1))/${#project_ids[@]}]"
     # Hack to add commas between json array elements
     if [[ $first_iteration = true ]]; then first_iteration=false; else echo "," >> $combined_json_file; fi
 
@@ -102,7 +106,7 @@ for i in "${!project_ids[@]}"; do
     cat responses/projects/$project_id/project.json >> $combined_json_file
     project_name=$(jq '.name_with_namespace' responses/projects/$project_id/project.json -r)
     web_url=$(jq '.web_url' responses/projects/$project_id/project.json -r)
-    echo " Project name: '$project_name' ($web_url)"
+    echo_date " Project name: '$project_name' ($web_url)"
 
     # Will get only the first 20 issues (`/issues` is paginated but we don't paginate for simplicity here)
     curl_wrapper -H "Private-Token: $GITLAB_ACCESS_TOKEN" "https://gitlab.invenia.ca/api/v4/projects/$project_id/issues?labels=nightly&state=opened" > responses/projects/$project_id/issues.json
@@ -117,7 +121,7 @@ for i in "${!project_ids[@]}"; do
         curl_wrapper -H "Private-Token: $GITLAB_ACCESS_TOKEN" "$url" > responses/projects/$project_id/pipelines/by_user/$nightly_user/page_1.json
         if [[ $(< responses/projects/$project_id/pipelines/by_user/$nightly_user/page_1.json) = '{"message":"403 Forbidden"}' ]]; then
             echo '[]' > responses/projects/$project_id/pipelines/by_user/$nightly_user/page_1.json
-            echo " Got a 403 Forbidden for $url (this is likely ok, some repos don't allow access to CI)"
+            echo_date " Got a 403 Forbidden for $url (this is likely ok, some repos don't allow access to CI)"
         fi
         num_pipelines=$(jq 'length' responses/projects/$project_id/pipelines/by_user/$nightly_user/page_1.json)
         if [[ $num_pipelines -gt 0 ]]; then
@@ -131,9 +135,9 @@ for i in "${!project_ids[@]}"; do
     pipeline_ids=$(jq -s '[. | flatten | .[]] | sort_by(.created_at) | [.[].id | tostring] | join(" ")' responses/projects/$project_id/pipelines/by_user/*/*.json -r)
     echo ',"pipeline_jobs":{' >> $combined_json_file
 
-    echo "pipeline_ids: [$pipeline_ids]"
+    echo_date "pipeline_ids: [$pipeline_ids]"
     if [[ -z "$pipeline_ids" ]]; then
-        echo "WARN: no nightly pipelines for project_id=$project_id"
+        echo_date "WARN: no nightly pipelines for project_id=$project_id"
         echo '}' >> $combined_json_file # pipeline_jobs
         echo '}' >> $combined_json_file # project
         continue
@@ -170,16 +174,16 @@ for i in "${!project_ids[@]}"; do
     # for pipeline_id in ${pipeline_ids[@]}; do
     for i in ${!pipeline_ids[@]}; do
         pipeline_id=${pipeline_ids[$i]}
-        echo "pipeline_ids ${pipeline_ids[@]}"
-        echo "pipeline i: $i"
-        echo "pipeline id: ${pipeline_ids[$i]} "
-        echo "length: ${#pipeline_ids[@]}"
+        echo_date "pipeline_ids ${pipeline_ids[@]}"
+        echo_date "pipeline i: $i"
+        echo_date "pipeline id: ${pipeline_ids[$i]} "
+        echo_date "length: ${#pipeline_ids[@]}"
         if (( $((i+1)) < ${#pipeline_ids[@]})); then
             next_pipeline_id=${pipeline_ids[$((i+1))]}
-            echo "next_pipeline_id $next_pipeline_id"
+            echo_date "next_pipeline_id $next_pipeline_id"
             failed_job_names_json=responses/projects/$project_id/pipelines/by_id/$next_pipeline_id/failed_job_names.json
         else
-            echo "NO next_pipeline_id"
+            echo_date "NO next_pipeline_id"
             failed_job_names_json=responses/dummy_failed_job_names.json
             echo "[]" > $failed_job_names_json
         fi
@@ -192,11 +196,11 @@ for i in "${!project_ids[@]}"; do
             -s 'def IN(s): first((s == .) // empty) // false; [. | flatten | .[] | select(.status=="failed" or (.name|IN($failed_job_names[]))) | .id | tostring] | join(" ")' \
             responses/projects/$project_id/pipelines/by_id/$pipeline_id/jobs.json -r\
         )
-        echo "job_ids_to_download: $job_ids_to_download"
+        echo_date "job_ids_to_download: $job_ids_to_download"
         # Run CURLs in background (using `&`), and then `wait` for all requests to complete after the for loop
         for job_id in ${job_ids_to_download[@]}; do
             mkdir -p responses/projects/$project_id/jobs/$job_id
-            echo "downloading job $job_id"
+            echo_date "downloading job $job_id"
             curl_wrapper -H "Private-Token: $GITLAB_ACCESS_TOKEN" "https://gitlab.invenia.ca/api/v4/projects/$project_id/jobs/$job_id/trace" > responses/projects/$project_id/jobs/$job_id/trace &
         done
         wait
@@ -206,16 +210,16 @@ done
 
 echo ']' >> $combined_json_file # end of file
 
-echo "Wrote to $combined_json_file"
+echo_date "Wrote to $combined_json_file"
 
 # Selecting only fields which we'll use in the dashboard
 cat $combined_json_file \
     | jq -c '[.[] | {metadata:{id:.metadata.id, name:.metadata.name, web_url:.metadata.web_url}, issues:.issues, nightly_user: .nightly_user, pipelines: (.pipelines|map({id:.id, status:.status, web_url:.web_url, created_at:.created_at})), pipeline_jobs:(.pipeline_jobs|to_entries|map({key:.key, value:{jobs:.value.jobs|map({id:.id, name:.name, status:.status, allow_failure:.allow_failure, web_url:.web_url, started_at:.started_at, runner:{id:.runner.id, description:.runner.description}})}})|from_entries)}]' \
     > $combined_small_json_file
-echo "Wrote to $combined_small_json_file"
+echo_date "Wrote to $combined_small_json_file"
 
 rm $combined_json_file
-echo "Deleted $combined_json_file to reduce GitLab artifact size"
+echo_date "Deleted $combined_json_file to reduce GitLab artifact size"
 
 date -u +"\"%Y-%m-%dT%H:%M:%SZ\"" > public/last_updated.json
 
