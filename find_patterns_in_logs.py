@@ -62,11 +62,13 @@ ignore_patterns = [
 #     }
 # ]
 
-projects = {}
-for f in glob.glob("responses/projects/*.json"):
-    with open(f, "rb") as infile:
-        for project in json.load(infile):
-            projects[project["id"]] = project
+def load_projects_metadata():
+    projects = {}
+    for f in glob.glob("responses/projects/*.json"):
+        with open(f, "rb") as infile:
+            for project in json.load(infile):
+                projects[project["id"]] = project
+    return projects
 
 
 def find_pattern_occurences(pattern, text, pattern_type):
@@ -134,20 +136,30 @@ def get_manifest_test_dependencies(clean_text):
         })
     return sorted(dependencies, key=lambda x: x['name'])
 
+def extract_info_from_log_files(paths, projects):
+    extracted_info = {}
+    for i, path in enumerate(paths):
+        match = re.match(r'responses/projects/(\d+)/jobs/(\d+)/trace', str(path))
+        if match is None:
+            print(datetime.now(), "Path is not as expected")
+            sys.exit(1)
+        project_id = int(match.group(1))
+        job_id = int(match.group(2))
 
-extracted_info = {}
+        print(datetime.now(), f"[{i+1}/{len(paths)}] Project name: {projects[project_id]['path_with_namespace']}, project_id: {project_id}, job_id: {job_id}")
 
-paths = list(Path('responses').rglob('trace'))
-for i, path in enumerate(paths):
-    match = re.match(r'responses/projects/(\d+)/jobs/(\d+)/trace', str(path))
-    if match is None:
-        print(datetime.now(), "Path is not as expected")
-        sys.exit(1)
-    project_id = int(match.group(1))
-    job_id = int(match.group(2))
+        dependencies, error_messages = extract_info_from_log_file(path)
 
-    print(datetime.now(), f"[{i+1}/{len(paths)}] Project name: {projects[project_id]['path_with_namespace']}, project_id: {project_id}, job_id: {job_id}")
+        if len(dependencies) > 0 or len(error_messages) > 0:
+            if project_id not in extracted_info:
+                extracted_info[project_id] = {}
+            extracted_info[project_id][job_id] = {}
+            extracted_info[project_id][job_id]["dependencies"] = dependencies
+            extracted_info[project_id][job_id]["error_messages"] = error_messages
 
+    return extracted_info
+
+def extract_info_from_log_file(path):
     with open(path, 'r') as f:
         text = remove_ansi_escapes(f.read())
 
@@ -164,18 +176,16 @@ for i, path in enumerate(paths):
         error_messages = [e for e in error_messages if not any([re.search(p, e["matched_group"]) for p in ignore_patterns])]
         print(datetime.now(), f"Found {len(error_messages)} error(s) in {path}")
 
-        if len(dependencies) > 0 or len(error_messages) > 0:
-            if project_id not in extracted_info:
-                extracted_info[project_id] = {}
-            extracted_info[project_id][job_id] = {}
-            extracted_info[project_id][job_id]["dependencies"] = dependencies
-            extracted_info[project_id][job_id]["error_messages"] = error_messages
-
+        return dependencies, error_messages
 
 def save_to_file(obj, output_file):
     with open(output_file, 'w') as f:
         json.dump(obj, f)
         print(datetime.now(), f"Wrote to {output_file}")
 
-save_to_file(extracted_info, 'public/extracted_info.json')
+if __name__ == "__main__":
+    projects = load_projects_metadata()
+    paths = list(Path('responses').rglob('trace'))
+    extracted_info = extract_info_from_log_files(paths, projects)
+    save_to_file(extracted_info, 'public/extracted_info.json')
 

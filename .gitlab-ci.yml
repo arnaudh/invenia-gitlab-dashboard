@@ -18,6 +18,10 @@ stages:
   before_script:
     - *setup
   script:
+    # Running our quick tests before building the dashboard.
+    # TODO switch to pytest, setup tox, etc. and move tests to their own job
+    # (https://gitlab.invenia.ca/invenia/wiki/blob/master/python/style-guide.md)
+    - python3 -m unittest
     - ./download_pipelines_info.sh
     - ./find_patterns_in_logs.py
     # Compress files for faster transfer to the browser (especially large JSON files).
