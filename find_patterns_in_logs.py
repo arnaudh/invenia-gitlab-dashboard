@@ -104,11 +104,12 @@ def find_pattern_occurences(pattern, text, pattern_type):
 # Precompiling project...
 # ```
 # The dependencies we care about are the ones showing in the Manifest.toml section.
-# Sometimes dependencies show up with a +:
+# The dependencies list ends when there is no more entry starting with an open bracket '['.
+# We can't rely on "Precompiling project..." always being at the end (see
+# https://gitlab.invenia.ca/invenia/gitlab-dashboard/-/issues/17).
+# Note sometimes dependencies show up with a +:
 #   [1c724243] + AWSS3 v0.9.2
-# TODO Fix for e.g. https://gitlab.invenia.ca/invenia/ForecastMerging.jl/-/jobs/2017749
-# https://gitlab.invenia.ca/invenia/gitlab-dashboard/-/issues/17
-test_section_regex = r" Testing (?P<package_name>[^\n]?)\n.*?\/Manifest.toml`\n(?P<dep_list>.*?)Precompiling project"
+test_section_regex = r"Status .*\/Manifest\.toml`\n(?P<dep_list>(\s*\[.+\n)+)"
 dependency_regex = r"\[(?P<uuid_short>.*?)\](?: \+)? (?P<name>.*?) (?P<version>.*?)\n"
 
 # https://stackoverflow.com/questions/14693701/how-can-i-remove-the-ansi-escape-sequences-from-a-string-in-python
@@ -117,7 +118,7 @@ def remove_ansi_escapes(text):
     return ansi_escape.sub('', text)
 
 def get_manifest_test_dependencies(clean_text):
-    match = re.search(test_section_regex, clean_text, flags=re.DOTALL)
+    match = re.search(test_section_regex, clean_text)
     if match is None:
         print(datetime.now(), "text did not match test_section_regex")
         return []
