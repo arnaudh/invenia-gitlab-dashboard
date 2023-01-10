@@ -16,6 +16,10 @@ stages:
 
 "Build dashboard":
   stage: build
+  tags:
+    # Pin to linux docker to make packages installation more reliable
+    - x86_64
+    - docker-ci
   before_script:
     - *setup
   script:
