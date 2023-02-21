@@ -1,7 +1,6 @@
-
 # GitLab dashboard
 
-**See the live dashboard [here](https://invenia.pages.invenia.ca/gitlab-dashboard/)**
+**See the live dashboard [here](https://invenia.pages.invenia.ca/continuous-delivery/gitlab-dashboard/)**
 
 The idea is to have a top-level view of nightly failures across all repos and across time, in order to help manage and investigate issues that come up during [nightly].
 
