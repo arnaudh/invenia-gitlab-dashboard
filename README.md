@@ -22,7 +22,7 @@ Issue triage:
 
 ## Setup
 
-The dashboard is served by [Gitlab Pages](https://docs.gitlab.com/ee/user/project/pages/) and can be found [here](https://invenia.pages.invenia.ca/gitlab-dashboard/).
+The dashboard is served by [Gitlab Pages](https://docs.gitlab.com/ee/user/project/pages/) and can be found [here](https://invenia.pages.invenia.ca/continuous-delivery/gitlab-dashboard/).
 
 It is built daily by a [CI pipeline for the current repo](https://gitlab.invenia.ca/invenia/gitlab-dashboard/-/pipelines) (schedule currently setup under `@arnaud.henry`'s account at `0 0 * * *` with timezone `Central Time (US & Canada)`).
 
