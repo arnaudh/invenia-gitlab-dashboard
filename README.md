@@ -1,8 +1,16 @@
 # GitLab dashboard
 
-**See the live dashboard [here](https://invenia.pages.invenia.ca/continuous-delivery/gitlab-dashboard/)**
+A dashboard that I designed and built while I was at [Invenia](https://github.com/invenia), to track Continuous Integration failures across 100+ GitLab repositories.
+This made it easier to catalog issues and recognize patterns over time, reducing the maintenance load incurred by the dev team.
 
-The idea is to have a top-level view of nightly failures across all repos and across time, in order to help manage and investigate issues that come up during [nightly].
+Note this repo is not very polished and is untested. It's not actively maintained.
+
+### Screenshot
+
+![](screenshots/screenshot_popup.png)
+
+The idea is to have a top-level view of nightly failures across all repos (rows) and across time (columns), in order to help manage and investigate issues that come up during nightly CI runs.
+Hovering a job link gives the full error message detected in the logs, and additional info such as the list of dependency changes.
 
 ### How can the dashboard help?
 
@@ -14,11 +22,12 @@ Nightly role:
 Issue triage:
 - which issues are the most prevalent?
 - how often does issue X show up? Any pattern of note, e.g. relative to other failures?
+- what Julia dependency changed compared to the previous run?
+- create a GitLab issue in one click
 
 ### Ideas to make it more useful
 - list most prevalent errors, highlight errors not seen before
-- show commit hashes, package releases, dependency version changes (if that is possible?)
-- show related Gitlab issues. make it possible to easily assign a job failure to an issue
+- indicate run time e.g. using color, to help detect slowdowns across repos
 
 ## Setup
 
