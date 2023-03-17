@@ -3,7 +3,7 @@
 A dashboard that I designed and built while I was at [Invenia](https://github.com/invenia), to track Continuous Integration failures across 100+ GitLab repositories.
 This made it easier to catalog issues and recognize patterns over time, reducing the maintenance load incurred by the dev team.
 
-Note this repo is not very polished and is untested. It's not actively maintained.
+It's ownership was transferred to me when I left the company. Note this repo is not very polished and is untested. It's not actively maintained.
 
 ### Screenshot
 
